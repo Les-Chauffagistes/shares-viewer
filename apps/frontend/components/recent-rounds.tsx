@@ -25,6 +25,12 @@ type RoundArchive = {
   workerStats: WorkerRoundStat[];
 };
 
+function roundHexToDecimal(round: string): string {
+  const parsed = parseInt(round, 16);
+  if (Number.isNaN(parsed)) return round;
+  return `${round} (${parsed.toLocaleString("fr-FR")})`;
+}
+
 async function getHistory(): Promise<RoundArchive[]> {
   const httpUrl = process.env.NEXT_PUBLIC_BACKEND_HTTP_URL;
 
@@ -69,7 +75,9 @@ export async function RecentRounds() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm text-neutral-400">Bloc</p>
-                  <h3 className="text-xl font-semibold">{round.roundKey}</h3>
+                  <h3 className="text-xl font-semibold">
+                    {roundHexToDecimal(round.roundKey)}
+                  </h3>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">

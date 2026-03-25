@@ -55,6 +55,7 @@ export type WorkerRoundStatMinAggregateOutputType = {
   roundArchiveId: number | null
   roundKey: string | null
   workerName: string | null
+  address: string | null
   displayName: string | null
   bestShare: number | null
   sharesCount: number | null
@@ -72,6 +73,7 @@ export type WorkerRoundStatMaxAggregateOutputType = {
   roundArchiveId: number | null
   roundKey: string | null
   workerName: string | null
+  address: string | null
   displayName: string | null
   bestShare: number | null
   sharesCount: number | null
@@ -89,6 +91,7 @@ export type WorkerRoundStatCountAggregateOutputType = {
   roundArchiveId: number
   roundKey: number
   workerName: number
+  address: number
   displayName: number
   bestShare: number
   sharesCount: number
@@ -132,6 +135,7 @@ export type WorkerRoundStatMinAggregateInputType = {
   roundArchiveId?: true
   roundKey?: true
   workerName?: true
+  address?: true
   displayName?: true
   bestShare?: true
   sharesCount?: true
@@ -149,6 +153,7 @@ export type WorkerRoundStatMaxAggregateInputType = {
   roundArchiveId?: true
   roundKey?: true
   workerName?: true
+  address?: true
   displayName?: true
   bestShare?: true
   sharesCount?: true
@@ -166,6 +171,7 @@ export type WorkerRoundStatCountAggregateInputType = {
   roundArchiveId?: true
   roundKey?: true
   workerName?: true
+  address?: true
   displayName?: true
   bestShare?: true
   sharesCount?: true
@@ -270,6 +276,7 @@ export type WorkerRoundStatGroupByOutputType = {
   roundArchiveId: number
   roundKey: string
   workerName: string
+  address: string | null
   displayName: string
   bestShare: number
   sharesCount: number
@@ -310,6 +317,7 @@ export type WorkerRoundStatWhereInput = {
   roundArchiveId?: Prisma.IntFilter<"WorkerRoundStat"> | number
   roundKey?: Prisma.StringFilter<"WorkerRoundStat"> | string
   workerName?: Prisma.StringFilter<"WorkerRoundStat"> | string
+  address?: Prisma.StringNullableFilter<"WorkerRoundStat"> | string | null
   displayName?: Prisma.StringFilter<"WorkerRoundStat"> | string
   bestShare?: Prisma.FloatFilter<"WorkerRoundStat"> | number
   sharesCount?: Prisma.IntFilter<"WorkerRoundStat"> | number
@@ -328,6 +336,7 @@ export type WorkerRoundStatOrderByWithRelationInput = {
   roundArchiveId?: Prisma.SortOrder
   roundKey?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrderInput | Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShare?: Prisma.SortOrder
   sharesCount?: Prisma.SortOrder
@@ -350,6 +359,7 @@ export type WorkerRoundStatWhereUniqueInput = Prisma.AtLeast<{
   roundArchiveId?: Prisma.IntFilter<"WorkerRoundStat"> | number
   roundKey?: Prisma.StringFilter<"WorkerRoundStat"> | string
   workerName?: Prisma.StringFilter<"WorkerRoundStat"> | string
+  address?: Prisma.StringNullableFilter<"WorkerRoundStat"> | string | null
   displayName?: Prisma.StringFilter<"WorkerRoundStat"> | string
   bestShare?: Prisma.FloatFilter<"WorkerRoundStat"> | number
   sharesCount?: Prisma.IntFilter<"WorkerRoundStat"> | number
@@ -368,6 +378,7 @@ export type WorkerRoundStatOrderByWithAggregationInput = {
   roundArchiveId?: Prisma.SortOrder
   roundKey?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrderInput | Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShare?: Prisma.SortOrder
   sharesCount?: Prisma.SortOrder
@@ -393,6 +404,7 @@ export type WorkerRoundStatScalarWhereWithAggregatesInput = {
   roundArchiveId?: Prisma.IntWithAggregatesFilter<"WorkerRoundStat"> | number
   roundKey?: Prisma.StringWithAggregatesFilter<"WorkerRoundStat"> | string
   workerName?: Prisma.StringWithAggregatesFilter<"WorkerRoundStat"> | string
+  address?: Prisma.StringNullableWithAggregatesFilter<"WorkerRoundStat"> | string | null
   displayName?: Prisma.StringWithAggregatesFilter<"WorkerRoundStat"> | string
   bestShare?: Prisma.FloatWithAggregatesFilter<"WorkerRoundStat"> | number
   sharesCount?: Prisma.IntWithAggregatesFilter<"WorkerRoundStat"> | number
@@ -408,6 +420,7 @@ export type WorkerRoundStatScalarWhereWithAggregatesInput = {
 export type WorkerRoundStatCreateInput = {
   roundKey: string
   workerName: string
+  address?: string | null
   displayName: string
   bestShare: number
   sharesCount: number
@@ -426,6 +439,7 @@ export type WorkerRoundStatUncheckedCreateInput = {
   roundArchiveId: number
   roundKey: string
   workerName: string
+  address?: string | null
   displayName: string
   bestShare: number
   sharesCount: number
@@ -441,6 +455,7 @@ export type WorkerRoundStatUncheckedCreateInput = {
 export type WorkerRoundStatUpdateInput = {
   roundKey?: Prisma.StringFieldUpdateOperationsInput | string
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShare?: Prisma.FloatFieldUpdateOperationsInput | number
   sharesCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -459,6 +474,7 @@ export type WorkerRoundStatUncheckedUpdateInput = {
   roundArchiveId?: Prisma.IntFieldUpdateOperationsInput | number
   roundKey?: Prisma.StringFieldUpdateOperationsInput | string
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShare?: Prisma.FloatFieldUpdateOperationsInput | number
   sharesCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -476,6 +492,7 @@ export type WorkerRoundStatCreateManyInput = {
   roundArchiveId: number
   roundKey: string
   workerName: string
+  address?: string | null
   displayName: string
   bestShare: number
   sharesCount: number
@@ -491,6 +508,7 @@ export type WorkerRoundStatCreateManyInput = {
 export type WorkerRoundStatUpdateManyMutationInput = {
   roundKey?: Prisma.StringFieldUpdateOperationsInput | string
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShare?: Prisma.FloatFieldUpdateOperationsInput | number
   sharesCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -508,6 +526,7 @@ export type WorkerRoundStatUncheckedUpdateManyInput = {
   roundArchiveId?: Prisma.IntFieldUpdateOperationsInput | number
   roundKey?: Prisma.StringFieldUpdateOperationsInput | string
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShare?: Prisma.FloatFieldUpdateOperationsInput | number
   sharesCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -540,6 +559,7 @@ export type WorkerRoundStatCountOrderByAggregateInput = {
   roundArchiveId?: Prisma.SortOrder
   roundKey?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShare?: Prisma.SortOrder
   sharesCount?: Prisma.SortOrder
@@ -569,6 +589,7 @@ export type WorkerRoundStatMaxOrderByAggregateInput = {
   roundArchiveId?: Prisma.SortOrder
   roundKey?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShare?: Prisma.SortOrder
   sharesCount?: Prisma.SortOrder
@@ -586,6 +607,7 @@ export type WorkerRoundStatMinOrderByAggregateInput = {
   roundArchiveId?: Prisma.SortOrder
   roundKey?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShare?: Prisma.SortOrder
   sharesCount?: Prisma.SortOrder
@@ -652,6 +674,10 @@ export type WorkerRoundStatUncheckedUpdateManyWithoutRoundArchiveNestedInput = {
   deleteMany?: Prisma.WorkerRoundStatScalarWhereInput | Prisma.WorkerRoundStatScalarWhereInput[]
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
@@ -659,6 +685,7 @@ export type BoolFieldUpdateOperationsInput = {
 export type WorkerRoundStatCreateWithoutRoundArchiveInput = {
   roundKey: string
   workerName: string
+  address?: string | null
   displayName: string
   bestShare: number
   sharesCount: number
@@ -675,6 +702,7 @@ export type WorkerRoundStatUncheckedCreateWithoutRoundArchiveInput = {
   id?: number
   roundKey: string
   workerName: string
+  address?: string | null
   displayName: string
   bestShare: number
   sharesCount: number
@@ -721,6 +749,7 @@ export type WorkerRoundStatScalarWhereInput = {
   roundArchiveId?: Prisma.IntFilter<"WorkerRoundStat"> | number
   roundKey?: Prisma.StringFilter<"WorkerRoundStat"> | string
   workerName?: Prisma.StringFilter<"WorkerRoundStat"> | string
+  address?: Prisma.StringNullableFilter<"WorkerRoundStat"> | string | null
   displayName?: Prisma.StringFilter<"WorkerRoundStat"> | string
   bestShare?: Prisma.FloatFilter<"WorkerRoundStat"> | number
   sharesCount?: Prisma.IntFilter<"WorkerRoundStat"> | number
@@ -737,6 +766,7 @@ export type WorkerRoundStatCreateManyRoundArchiveInput = {
   id?: number
   roundKey: string
   workerName: string
+  address?: string | null
   displayName: string
   bestShare: number
   sharesCount: number
@@ -752,6 +782,7 @@ export type WorkerRoundStatCreateManyRoundArchiveInput = {
 export type WorkerRoundStatUpdateWithoutRoundArchiveInput = {
   roundKey?: Prisma.StringFieldUpdateOperationsInput | string
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShare?: Prisma.FloatFieldUpdateOperationsInput | number
   sharesCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -768,6 +799,7 @@ export type WorkerRoundStatUncheckedUpdateWithoutRoundArchiveInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   roundKey?: Prisma.StringFieldUpdateOperationsInput | string
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShare?: Prisma.FloatFieldUpdateOperationsInput | number
   sharesCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -784,6 +816,7 @@ export type WorkerRoundStatUncheckedUpdateManyWithoutRoundArchiveInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   roundKey?: Prisma.StringFieldUpdateOperationsInput | string
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShare?: Prisma.FloatFieldUpdateOperationsInput | number
   sharesCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -803,6 +836,7 @@ export type WorkerRoundStatSelect<ExtArgs extends runtime.Types.Extensions.Inter
   roundArchiveId?: boolean
   roundKey?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShare?: boolean
   sharesCount?: boolean
@@ -821,6 +855,7 @@ export type WorkerRoundStatSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   roundArchiveId?: boolean
   roundKey?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShare?: boolean
   sharesCount?: boolean
@@ -839,6 +874,7 @@ export type WorkerRoundStatSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   roundArchiveId?: boolean
   roundKey?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShare?: boolean
   sharesCount?: boolean
@@ -857,6 +893,7 @@ export type WorkerRoundStatSelectScalar = {
   roundArchiveId?: boolean
   roundKey?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShare?: boolean
   sharesCount?: boolean
@@ -869,7 +906,7 @@ export type WorkerRoundStatSelectScalar = {
   createdAt?: boolean
 }
 
-export type WorkerRoundStatOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roundArchiveId" | "roundKey" | "workerName" | "displayName" | "bestShare" | "sharesCount" | "rank" | "participated" | "streakAtTime" | "xpGained" | "totalXpAfter" | "levelAfter" | "createdAt", ExtArgs["result"]["workerRoundStat"]>
+export type WorkerRoundStatOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roundArchiveId" | "roundKey" | "workerName" | "address" | "displayName" | "bestShare" | "sharesCount" | "rank" | "participated" | "streakAtTime" | "xpGained" | "totalXpAfter" | "levelAfter" | "createdAt", ExtArgs["result"]["workerRoundStat"]>
 export type WorkerRoundStatInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   roundArchive?: boolean | Prisma.RoundArchiveDefaultArgs<ExtArgs>
 }
@@ -890,6 +927,7 @@ export type $WorkerRoundStatPayload<ExtArgs extends runtime.Types.Extensions.Int
     roundArchiveId: number
     roundKey: string
     workerName: string
+    address: string | null
     displayName: string
     bestShare: number
     sharesCount: number
@@ -1328,6 +1366,7 @@ export interface WorkerRoundStatFieldRefs {
   readonly roundArchiveId: Prisma.FieldRef<"WorkerRoundStat", 'Int'>
   readonly roundKey: Prisma.FieldRef<"WorkerRoundStat", 'String'>
   readonly workerName: Prisma.FieldRef<"WorkerRoundStat", 'String'>
+  readonly address: Prisma.FieldRef<"WorkerRoundStat", 'String'>
   readonly displayName: Prisma.FieldRef<"WorkerRoundStat", 'String'>
   readonly bestShare: Prisma.FieldRef<"WorkerRoundStat", 'Float'>
   readonly sharesCount: Prisma.FieldRef<"WorkerRoundStat", 'Int'>

@@ -25,6 +25,7 @@ export type RawShareMessage = {
 
 export type WorkerState = {
   workerName: string;
+  address: string;
   displayName: string;
   bestSdiff: number;
   sharesCount: number;
@@ -35,6 +36,19 @@ export type WorkerState = {
 
 export type LiveWorkerState = {
   workerName: string;
+  address: string;
+  displayName: string;
+  bestShare: number;
+  sharesCount: number;
+  lastShareTs: number;
+  size: number;
+  round: string;
+};
+
+export type LiveAddressState = {
+  address: string;
+  displayAddress: string;
+  workerNames: string[];
   displayName: string;
   bestShare: number;
   sharesCount: number;
@@ -45,6 +59,7 @@ export type LiveWorkerState = {
 
 export type ArchivedRoundWorker = {
   workerName: string;
+  address: string;
   displayName: string;
   bestShare: number;
   sharesCount: number;
@@ -62,6 +77,7 @@ export type WorkerRoundStatDto = {
   id: number;
   roundKey: string;
   workerName: string;
+  address: string;
   displayName: string;
   bestShare: number;
   sharesCount: number;

@@ -8,6 +8,7 @@ import {
 
 type RoundWorkerRedisState = {
   workerName: string;
+  address: string;
   displayName: string;
   bestShare: string;
   sharesCount: string;
@@ -53,13 +54,11 @@ export class RoundStateService {
   }
 
   async setCurrentRound(round: string, ts?: number): Promise<void> {
+    const startedAtKey = this.roundStartedAtKey(round);
     const multi = this.redis.multi();
-    multi.set(this.currentRoundKey(), round);
 
-    const startedAtExists = await this.redis.exists(this.roundStartedAtKey(round));
-    if (!startedAtExists) {
-      multi.set(this.roundStartedAtKey(round), String(ts ?? Date.now() / 1000));
-    }
+    multi.set(this.currentRoundKey(), round);
+    multi.setnx(startedAtKey, String(ts ?? Date.now() / 1000));
 
     await multi.exec();
   }
@@ -69,7 +68,7 @@ export class RoundStateService {
       this.archiveLockKey(round),
       "1",
       "EX",
-      10,
+      60,
       "NX",
     );
 
@@ -80,18 +79,53 @@ export class RoundStateService {
     currentRound: string;
     changedRound: boolean;
     previousRound: string | null;
-    updatedWorker: LiveWorkerState;
+    updatedWorker: LiveWorkerState | null;
   }> {
     const share = message.share;
     const round = share.round;
     const workerName = share.workername;
+    const address = share.address;
     const displayName = share.worker || workerName;
     const bestIncoming = Number(share.sdiff) || 0;
     const lastShareTs = Number(share.ts) || Date.now() / 1000;
 
     const currentRound = await this.getCurrentRound();
-    const changedRound = !!currentRound && currentRound !== round;
-    const previousRound = currentRound;
+
+    const incomingRoundNum = parseInt(round, 16);
+    const currentRoundNum = currentRound
+      ? parseInt(currentRound, 16)
+      : null;
+
+    if (Number.isNaN(incomingRoundNum)) {
+      this.logger.warn(`Round invalide reçu: ${round}`);
+      return {
+        currentRound: currentRound ?? round,
+        changedRound: false,
+        previousRound: null,
+        updatedWorker: null,
+      };
+    }
+
+    const changedRound =
+      currentRoundNum !== null && incomingRoundNum > currentRoundNum;
+
+    const staleRound =
+      currentRoundNum !== null && incomingRoundNum < currentRoundNum;
+
+    if (staleRound) {
+      this.logger.warn(
+        `Share ignoré car round en retard: incoming=${round}, current=${currentRound}`,
+      );
+
+      return {
+        currentRound: currentRound!,
+        changedRound: false,
+        previousRound: null,
+        updatedWorker: null,
+      };
+    }
+
+    const previousRound = changedRound ? currentRound : null;
 
     if (!currentRound || changedRound) {
       await this.setCurrentRound(round, lastShareTs);
@@ -112,6 +146,7 @@ export class RoundStateService {
     multi.sadd(workersSetKey, workerName);
     multi.hset(workerKey, {
       workerName,
+      address,
       displayName,
       bestShare: String(nextBest),
       sharesCount: String(nextShares),
@@ -126,6 +161,7 @@ export class RoundStateService {
       previousRound,
       updatedWorker: {
         workerName,
+        address,
         displayName,
         bestShare: nextBest,
         sharesCount: nextShares,
@@ -138,14 +174,25 @@ export class RoundStateService {
 
   async getLiveRoundState(round: string): Promise<LiveWorkerState[]> {
     const workers = await this.redis.smembers(this.roundWorkersSetKey(round));
-    const result: LiveWorkerState[] = [];
+    if (!workers.length) return [];
+
+    const pipeline = this.redis.pipeline();
 
     for (const workerName of workers) {
-      const raw = await this.redis.hgetall(this.roundWorkerKey(round, workerName));
-      if (!raw.workerName) continue;
+      pipeline.hgetall(this.roundWorkerKey(round, workerName));
+    }
+
+    const responses = await pipeline.exec();
+    const result: LiveWorkerState[] = [];
+
+    for (const [, rawValue] of responses ?? []) {
+      const raw = rawValue as RoundWorkerRedisState;
+
+      if (!raw?.workerName) continue;
 
       result.push({
         workerName: raw.workerName,
+        address: raw.address,
         displayName: raw.displayName,
         bestShare: Number(raw.bestShare || 0),
         sharesCount: Number(raw.sharesCount || 0),
@@ -162,14 +209,32 @@ export class RoundStateService {
   async getArchivedSnapshot(round: string) {
     const workers = await this.redis.smembers(this.roundWorkersSetKey(round));
     const startedAt = await this.redis.get(this.roundStartedAtKey(round));
-    const result: ArchivedRoundWorker[] = [];
+    if (!workers.length) {
+      return {
+        roundKey: round,
+        startedAt: startedAt ? Number(startedAt) : null,
+        endedAt: Date.now() / 1000,
+        workers: [],
+      };
+    }
+
+    const pipeline = this.redis.pipeline();
 
     for (const workerName of workers) {
-      const raw = await this.redis.hgetall(this.roundWorkerKey(round, workerName));
-      if (!raw.workerName) continue;
+      pipeline.hgetall(this.roundWorkerKey(round, workerName));
+    }
+
+    const responses = await pipeline.exec();
+    const result: ArchivedRoundWorker[] = [];
+
+    for (const [, rawValue] of responses ?? []) {
+      const raw = rawValue as RoundWorkerRedisState;
+
+      if (!raw?.workerName) continue;
 
       result.push({
         workerName: raw.workerName,
+        address: raw.address,
         displayName: raw.displayName,
         bestShare: Number(raw.bestShare || 0),
         sharesCount: Number(raw.sharesCount || 0),
@@ -190,13 +255,45 @@ export class RoundStateService {
   async resetForNewRound(previousRound: string, newRound: string, ts?: number) {
     await this.setCurrentRound(newRound, ts);
 
-    const keys = await this.redis.keys(`sv:round:${previousRound}:*`);
-    if (keys.length > 0) {
-      await this.redis.del(...keys);
+    const pattern = `sv:round:${previousRound}:*`;
+    let cursor = "0";
+    const keysToDelete: string[] = [];
+
+    do {
+      const [nextCursor, keys] = await this.redis.scan(
+        cursor,
+        "MATCH",
+        pattern,
+        "COUNT",
+        100,
+      );
+
+      cursor = nextCursor;
+
+      if (keys.length > 0) {
+        keysToDelete.push(...keys);
+      }
+    } while (cursor !== "0");
+
+    if (keysToDelete.length > 0) {
+      await this.redis.del(...keysToDelete);
     }
   }
 
   private computeSize(bestShare: number): number {
     return Math.max(0.8, Math.min(4, 1 + Math.log10(bestShare + 1) * 0.35));
+  }
+
+  private archivedRoundKey(round: string) {
+    return `sv:archived_round:${round}`;
+  }
+
+  async isRoundArchived(round: string): Promise<boolean> {
+    const value = await this.redis.get(this.archivedRoundKey(round));
+    return value === "1";
+  }
+
+  async markRoundArchived(round: string): Promise<void> {
+    await this.redis.set(this.archivedRoundKey(round), "1", "EX", 86400);
   }
 }

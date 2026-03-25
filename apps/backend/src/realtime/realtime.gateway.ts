@@ -9,7 +9,11 @@ import { Server, Socket } from "socket.io";
 
 @WebSocketGateway({
   cors: {
-    origin: "*",
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://ton-frontend.com",
+    ],
     credentials: true,
   },
 })
@@ -31,8 +35,8 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.emit("live_state", payload);
   }
 
-  emitWorkerUpdated(payload: unknown) {
-    this.server.emit("worker_updated", payload);
+  emitWorkerShareUpdated(payload: unknown) {
+    this.server.emit("worker_share_updated", payload);
   }
 
   emitRoundReset(payload: unknown) {

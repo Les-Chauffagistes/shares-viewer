@@ -23,119 +23,142 @@ export class RoundArchiveService {
 
     const bestShare = Math.max(...snapshot.workers.map((w) => w.bestShare), 0);
     const sharesCount = snapshot.workers.reduce((acc, w) => acc + w.sharesCount, 0);
+    const workerNames = snapshot.workers.map((w) => w.workerName);
 
-    return this.prisma.$transaction(async (tx) => {
-      const roundArchive = await tx.roundArchive.upsert({
-        where: { roundKey: snapshot.roundKey },
-        update: {
-          endedAt: new Date(snapshot.endedAt * 1000),
-          workersCount: snapshot.workers.length,
-          sharesCount,
-          bestShare,
-        },
-        create: {
-          roundKey: snapshot.roundKey,
-          startedAt: snapshot.startedAt ? new Date(snapshot.startedAt * 1000) : null,
-          endedAt: new Date(snapshot.endedAt * 1000),
-          workersCount: snapshot.workers.length,
-          sharesCount,
-          bestShare,
-        },
-      });
+    const existingProfiles = await this.prisma.workerProfile.findMany({
+      where: {
+        workerName: { in: workerNames },
+      },
+    });
 
-      for (let i = 0; i < snapshot.workers.length; i += 1) {
-        const worker = snapshot.workers[i];
-        const rank = i + 1;
+    const existingProfilesMap = new Map(
+      existingProfiles.map((profile) => [profile.workerName, profile]),
+    );
 
-        const existingProfile = await tx.workerProfile.findUnique({
-          where: { workerName: worker.workerName },
-        });
-
-        const nextStreak = (existingProfile?.currentStreak ?? 0) + 1;
-        const xpGained = this.levelService.computeXpGain({
-          bestShare: worker.bestShare,
-          sharesCount: worker.sharesCount,
-          streak: nextStreak,
-        });
-
-        const totalXpAfter = (existingProfile?.xp ?? 0) + xpGained;
-        const levelAfter = this.levelService.computeLevel(totalXpAfter);
-
-        await tx.workerProfile.upsert({
-          where: { workerName: worker.workerName },
+    return this.prisma.$transaction(
+      async (tx) => {
+        const roundArchive = await tx.roundArchive.upsert({
+          where: { roundKey: snapshot.roundKey },
           update: {
-            displayName: worker.displayName,
-            bestShareEver: Math.max(existingProfile?.bestShareEver ?? 0, worker.bestShare),
-            totalShares: (existingProfile?.totalShares ?? 0) + worker.sharesCount,
-            roundsParticipated: (existingProfile?.roundsParticipated ?? 0) + 1,
-            currentStreak: nextStreak,
-            bestStreak: Math.max(existingProfile?.bestStreak ?? 0, nextStreak),
-            xp: totalXpAfter,
-            level: levelAfter,
+            endedAt: new Date(snapshot.endedAt * 1000),
+            workersCount: snapshot.workers.length,
+            sharesCount,
+            bestShare,
           },
           create: {
-            workerName: worker.workerName,
-            displayName: worker.displayName,
-            bestShareEver: worker.bestShare,
-            totalShares: worker.sharesCount,
-            roundsParticipated: 1,
-            currentStreak: 1,
-            bestStreak: 1,
-            xp: xpGained,
-            level: this.levelService.computeLevel(xpGained),
+            roundKey: snapshot.roundKey,
+            startedAt: snapshot.startedAt ? new Date(snapshot.startedAt * 1000) : null,
+            endedAt: new Date(snapshot.endedAt * 1000),
+            workersCount: snapshot.workers.length,
+            sharesCount,
+            bestShare,
           },
         });
 
-        await tx.workerRoundStat.upsert({
-          where: {
-            roundKey_workerName: {
+        for (let i = 0; i < snapshot.workers.length; i += 1) {
+          const worker = snapshot.workers[i];
+          const rank = i + 1;
+
+          const existingProfile = existingProfilesMap.get(worker.workerName);
+
+          const nextStreak = (existingProfile?.currentStreak ?? 0) + 1;
+          const xpGained = this.levelService.computeXpGain({
+            bestShare: worker.bestShare,
+            sharesCount: worker.sharesCount,
+            streak: nextStreak,
+          });
+
+          const totalXpAfter = (existingProfile?.xp ?? 0) + xpGained;
+          const levelAfter = this.levelService.computeLevel(totalXpAfter);
+
+          await tx.workerProfile.upsert({
+            where: { workerName: worker.workerName },
+            update: {
+              address: worker.address,
+              displayName: worker.displayName,
+              bestShareEver: Math.max(existingProfile?.bestShareEver ?? 0, worker.bestShare),
+              totalShares: (existingProfile?.totalShares ?? 0) + worker.sharesCount,
+              roundsParticipated: (existingProfile?.roundsParticipated ?? 0) + 1,
+              currentStreak: nextStreak,
+              bestStreak: Math.max(existingProfile?.bestStreak ?? 0, nextStreak),
+              xp: totalXpAfter,
+              level: levelAfter,
+            },
+            create: {
+              workerName: worker.workerName,
+              address: worker.address,
+              displayName: worker.displayName,
+              bestShareEver: worker.bestShare,
+              totalShares: worker.sharesCount,
+              roundsParticipated: 1,
+              currentStreak: 1,
+              bestStreak: 1,
+              xp: xpGained,
+              level: levelAfter,
+            },
+          });
+
+          await tx.workerRoundStat.upsert({
+            where: {
+              roundKey_workerName: {
+                roundKey: snapshot.roundKey,
+                workerName: worker.workerName,
+              },
+            },
+            update: {
+              roundArchiveId: roundArchive.id,
+              address: worker.address,
+              displayName: worker.displayName,
+              bestShare: worker.bestShare,
+              sharesCount: worker.sharesCount,
+              rank,
+              participated: true,
+              streakAtTime: nextStreak,
+              xpGained,
+              totalXpAfter,
+              levelAfter,
+            },
+            create: {
+              roundArchiveId: roundArchive.id,
               roundKey: snapshot.roundKey,
               workerName: worker.workerName,
+              address: worker.address,
+              displayName: worker.displayName,
+              bestShare: worker.bestShare,
+              sharesCount: worker.sharesCount,
+              rank,
+              participated: true,
+              streakAtTime: nextStreak,
+              xpGained,
+              totalXpAfter,
+              levelAfter,
             },
-          },
-          update: {
-            displayName: worker.displayName,
-            bestShare: worker.bestShare,
-            sharesCount: worker.sharesCount,
-            rank,
-            participated: true,
-            streakAtTime: nextStreak,
-            xpGained,
-            totalXpAfter,
-            levelAfter,
-          },
-          create: {
-            roundArchiveId: roundArchive.id,
-            roundKey: snapshot.roundKey,
-            workerName: worker.workerName,
-            displayName: worker.displayName,
-            bestShare: worker.bestShare,
-            sharesCount: worker.sharesCount,
-            rank,
-            participated: true,
-            streakAtTime: nextStreak,
-            xpGained,
-            totalXpAfter,
-            levelAfter,
-          },
-        });
-      }
+          });
+        }
 
-      await this.resetStreaksForAbsentWorkers(
-        tx,
-        snapshot.workers.map((w) => w.workerName),
-      );
+        await this.resetStreaksForAbsentWorkers(
+          tx,
+          snapshot.workers.map((w) => w.workerName),
+        );
 
-      await this.keepOnlyLastFiveRounds(tx);
+        await this.keepOnlyLastFiveRounds(tx);
 
-      return roundArchive;
-    });
+        return roundArchive;
+      },
+      {
+        timeout: 15000,
+      },
+    );
   }
 
   private async resetStreaksForAbsentWorkers(
     tx: TxClient,
     presentWorkerNames: string[],
   ) {
+    if (!presentWorkerNames.length) {
+      return;
+    }
+
     await tx.workerProfile.updateMany({
       where: {
         workerName: { notIn: presentWorkerNames },

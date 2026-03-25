@@ -51,6 +51,7 @@ export type WorkerProfileSumAggregateOutputType = {
 export type WorkerProfileMinAggregateOutputType = {
   id: number | null
   workerName: string | null
+  address: string | null
   displayName: string | null
   bestShareEver: number | null
   totalShares: number | null
@@ -66,6 +67,7 @@ export type WorkerProfileMinAggregateOutputType = {
 export type WorkerProfileMaxAggregateOutputType = {
   id: number | null
   workerName: string | null
+  address: string | null
   displayName: string | null
   bestShareEver: number | null
   totalShares: number | null
@@ -81,6 +83,7 @@ export type WorkerProfileMaxAggregateOutputType = {
 export type WorkerProfileCountAggregateOutputType = {
   id: number
   workerName: number
+  address: number
   displayName: number
   bestShareEver: number
   totalShares: number
@@ -120,6 +123,7 @@ export type WorkerProfileSumAggregateInputType = {
 export type WorkerProfileMinAggregateInputType = {
   id?: true
   workerName?: true
+  address?: true
   displayName?: true
   bestShareEver?: true
   totalShares?: true
@@ -135,6 +139,7 @@ export type WorkerProfileMinAggregateInputType = {
 export type WorkerProfileMaxAggregateInputType = {
   id?: true
   workerName?: true
+  address?: true
   displayName?: true
   bestShareEver?: true
   totalShares?: true
@@ -150,6 +155,7 @@ export type WorkerProfileMaxAggregateInputType = {
 export type WorkerProfileCountAggregateInputType = {
   id?: true
   workerName?: true
+  address?: true
   displayName?: true
   bestShareEver?: true
   totalShares?: true
@@ -252,6 +258,7 @@ export type WorkerProfileGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 export type WorkerProfileGroupByOutputType = {
   id: number
   workerName: string
+  address: string | null
   displayName: string
   bestShareEver: number
   totalShares: number
@@ -290,6 +297,7 @@ export type WorkerProfileWhereInput = {
   NOT?: Prisma.WorkerProfileWhereInput | Prisma.WorkerProfileWhereInput[]
   id?: Prisma.IntFilter<"WorkerProfile"> | number
   workerName?: Prisma.StringFilter<"WorkerProfile"> | string
+  address?: Prisma.StringNullableFilter<"WorkerProfile"> | string | null
   displayName?: Prisma.StringFilter<"WorkerProfile"> | string
   bestShareEver?: Prisma.FloatFilter<"WorkerProfile"> | number
   totalShares?: Prisma.IntFilter<"WorkerProfile"> | number
@@ -305,6 +313,7 @@ export type WorkerProfileWhereInput = {
 export type WorkerProfileOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrderInput | Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShareEver?: Prisma.SortOrder
   totalShares?: Prisma.SortOrder
@@ -323,6 +332,7 @@ export type WorkerProfileWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.WorkerProfileWhereInput | Prisma.WorkerProfileWhereInput[]
   OR?: Prisma.WorkerProfileWhereInput[]
   NOT?: Prisma.WorkerProfileWhereInput | Prisma.WorkerProfileWhereInput[]
+  address?: Prisma.StringNullableFilter<"WorkerProfile"> | string | null
   displayName?: Prisma.StringFilter<"WorkerProfile"> | string
   bestShareEver?: Prisma.FloatFilter<"WorkerProfile"> | number
   totalShares?: Prisma.IntFilter<"WorkerProfile"> | number
@@ -338,6 +348,7 @@ export type WorkerProfileWhereUniqueInput = Prisma.AtLeast<{
 export type WorkerProfileOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrderInput | Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShareEver?: Prisma.SortOrder
   totalShares?: Prisma.SortOrder
@@ -361,6 +372,7 @@ export type WorkerProfileScalarWhereWithAggregatesInput = {
   NOT?: Prisma.WorkerProfileScalarWhereWithAggregatesInput | Prisma.WorkerProfileScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"WorkerProfile"> | number
   workerName?: Prisma.StringWithAggregatesFilter<"WorkerProfile"> | string
+  address?: Prisma.StringNullableWithAggregatesFilter<"WorkerProfile"> | string | null
   displayName?: Prisma.StringWithAggregatesFilter<"WorkerProfile"> | string
   bestShareEver?: Prisma.FloatWithAggregatesFilter<"WorkerProfile"> | number
   totalShares?: Prisma.IntWithAggregatesFilter<"WorkerProfile"> | number
@@ -375,6 +387,7 @@ export type WorkerProfileScalarWhereWithAggregatesInput = {
 
 export type WorkerProfileCreateInput = {
   workerName: string
+  address?: string | null
   displayName: string
   bestShareEver?: number
   totalShares?: number
@@ -390,6 +403,7 @@ export type WorkerProfileCreateInput = {
 export type WorkerProfileUncheckedCreateInput = {
   id?: number
   workerName: string
+  address?: string | null
   displayName: string
   bestShareEver?: number
   totalShares?: number
@@ -404,6 +418,7 @@ export type WorkerProfileUncheckedCreateInput = {
 
 export type WorkerProfileUpdateInput = {
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShareEver?: Prisma.FloatFieldUpdateOperationsInput | number
   totalShares?: Prisma.IntFieldUpdateOperationsInput | number
@@ -419,6 +434,7 @@ export type WorkerProfileUpdateInput = {
 export type WorkerProfileUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShareEver?: Prisma.FloatFieldUpdateOperationsInput | number
   totalShares?: Prisma.IntFieldUpdateOperationsInput | number
@@ -434,6 +450,7 @@ export type WorkerProfileUncheckedUpdateInput = {
 export type WorkerProfileCreateManyInput = {
   id?: number
   workerName: string
+  address?: string | null
   displayName: string
   bestShareEver?: number
   totalShares?: number
@@ -448,6 +465,7 @@ export type WorkerProfileCreateManyInput = {
 
 export type WorkerProfileUpdateManyMutationInput = {
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShareEver?: Prisma.FloatFieldUpdateOperationsInput | number
   totalShares?: Prisma.IntFieldUpdateOperationsInput | number
@@ -463,6 +481,7 @@ export type WorkerProfileUpdateManyMutationInput = {
 export type WorkerProfileUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   workerName?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
   bestShareEver?: Prisma.FloatFieldUpdateOperationsInput | number
   totalShares?: Prisma.IntFieldUpdateOperationsInput | number
@@ -478,6 +497,7 @@ export type WorkerProfileUncheckedUpdateManyInput = {
 export type WorkerProfileCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShareEver?: Prisma.SortOrder
   totalShares?: Prisma.SortOrder
@@ -504,6 +524,7 @@ export type WorkerProfileAvgOrderByAggregateInput = {
 export type WorkerProfileMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShareEver?: Prisma.SortOrder
   totalShares?: Prisma.SortOrder
@@ -519,6 +540,7 @@ export type WorkerProfileMaxOrderByAggregateInput = {
 export type WorkerProfileMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   workerName?: Prisma.SortOrder
+  address?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   bestShareEver?: Prisma.SortOrder
   totalShares?: Prisma.SortOrder
@@ -547,6 +569,7 @@ export type WorkerProfileSumOrderByAggregateInput = {
 export type WorkerProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShareEver?: boolean
   totalShares?: boolean
@@ -562,6 +585,7 @@ export type WorkerProfileSelect<ExtArgs extends runtime.Types.Extensions.Interna
 export type WorkerProfileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShareEver?: boolean
   totalShares?: boolean
@@ -577,6 +601,7 @@ export type WorkerProfileSelectCreateManyAndReturn<ExtArgs extends runtime.Types
 export type WorkerProfileSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShareEver?: boolean
   totalShares?: boolean
@@ -592,6 +617,7 @@ export type WorkerProfileSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
 export type WorkerProfileSelectScalar = {
   id?: boolean
   workerName?: boolean
+  address?: boolean
   displayName?: boolean
   bestShareEver?: boolean
   totalShares?: boolean
@@ -604,7 +630,7 @@ export type WorkerProfileSelectScalar = {
   updatedAt?: boolean
 }
 
-export type WorkerProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workerName" | "displayName" | "bestShareEver" | "totalShares" | "roundsParticipated" | "currentStreak" | "bestStreak" | "xp" | "level" | "createdAt" | "updatedAt", ExtArgs["result"]["workerProfile"]>
+export type WorkerProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workerName" | "address" | "displayName" | "bestShareEver" | "totalShares" | "roundsParticipated" | "currentStreak" | "bestStreak" | "xp" | "level" | "createdAt" | "updatedAt", ExtArgs["result"]["workerProfile"]>
 
 export type $WorkerProfilePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "WorkerProfile"
@@ -612,6 +638,7 @@ export type $WorkerProfilePayload<ExtArgs extends runtime.Types.Extensions.Inter
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     workerName: string
+    address: string | null
     displayName: string
     bestShareEver: number
     totalShares: number
@@ -1047,6 +1074,7 @@ export interface Prisma__WorkerProfileClient<T, Null = never, ExtArgs extends ru
 export interface WorkerProfileFieldRefs {
   readonly id: Prisma.FieldRef<"WorkerProfile", 'Int'>
   readonly workerName: Prisma.FieldRef<"WorkerProfile", 'String'>
+  readonly address: Prisma.FieldRef<"WorkerProfile", 'String'>
   readonly displayName: Prisma.FieldRef<"WorkerProfile", 'String'>
   readonly bestShareEver: Prisma.FieldRef<"WorkerProfile", 'Float'>
   readonly totalShares: Prisma.FieldRef<"WorkerProfile", 'Int'>

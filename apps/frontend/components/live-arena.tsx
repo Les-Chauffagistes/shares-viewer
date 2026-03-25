@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 type LiveWorkerState = {
+  address: string;
   workerName: string;
   displayName: string;
   bestShare: number;
@@ -20,6 +21,35 @@ type LiveStatePayload = {
 };
 
 let socket: Socket | null = null;
+
+const PUBLIC_ADDRESS =
+  "bc1qqp9zq4an6nyzhcspz2xfmkcf8rj0p6w94a5gyeu2a7rghxjhnqqsvymz5m";
+
+function roundHexToDecimal(round: string | null): string {
+  if (!round) return "Aucun";
+
+  const parsed = parseInt(round, 16);
+  if (Number.isNaN(parsed)) return round;
+
+  return `${round} (${parsed.toLocaleString("fr-FR")})`;
+}
+
+function extractMinerName(workerName: string): string {
+  if (!workerName) return "worker?";
+
+  const parts = workerName.split(".");
+  return parts.length > 1 ? parts[parts.length - 1] : workerName;
+}
+
+function buildDisplayName(address: string, workerName: string): string {
+  const minerName = extractMinerName(workerName);
+
+  if (address === PUBLIC_ADDRESS) {
+    return `chauff_pool.${minerName}`;
+  }
+
+  return `${address}.${minerName}`;
+}
 
 export function LiveArena() {
   const [round, setRound] = useState<string | null>(null);
@@ -98,7 +128,9 @@ export function LiveArena() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm text-neutral-400">Bloc courant</p>
-            <p className="mt-1 text-2xl font-bold">{round ?? "Aucun"}</p>
+            <p className="mt-1 text-2xl font-bold">
+              {roundHexToDecimal(round)}
+            </p>
           </div>
 
           <div
@@ -121,14 +153,14 @@ export function LiveArena() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sortedWorkers.map((worker, index) => (
             <article
-              key={worker.workerName}
+              key={`${worker.address}-${worker.workerName}`}
               className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4"
             >
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-neutral-400">#{index + 1}</p>
-                  <h3 className="max-w-[180px] truncate text-lg font-semibold">
-                    {worker.displayName}
+                  <h3 className="max-w-[220px] truncate text-lg font-semibold">
+                    {buildDisplayName(worker.address, worker.workerName)}
                   </h3>
                 </div>
 
@@ -144,7 +176,7 @@ export function LiveArena() {
                     width: `${48 * worker.size}px`,
                     height: `${48 * worker.size}px`,
                   }}
-                  title={`${worker.displayName} — ${Math.round(worker.bestShare)}`}
+                  title={`${buildDisplayName(worker.address, worker.workerName)} — ${Math.round(worker.bestShare)}`}
                 >
                   ⛏️
                 </div>
@@ -157,8 +189,14 @@ export function LiveArena() {
                     {Math.round(worker.bestShare).toLocaleString("fr-FR")}
                   </span>
                 </p>
+
                 <p>
-                  Worker <span className="text-neutral-400">{worker.workerName}</span>
+                  Adresse <span className="text-neutral-400">{worker.address}</span>
+                </p>
+
+                <p>
+                  Worker{" "}
+                  <span className="text-neutral-400">{worker.workerName}</span>
                 </p>
               </div>
             </article>

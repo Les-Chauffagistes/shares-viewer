@@ -28,6 +28,7 @@ model WorkerRoundStat {
   roundArchiveId Int
   roundKey       String
   workerName     String
+  address        String?
   displayName    String
   bestShare      Float
   sharesCount    Int
@@ -39,28 +40,31 @@ model WorkerRoundStat {
   levelAfter     Int
   createdAt      DateTime     @default(now())
 
-  roundArchive   RoundArchive  @relation(fields: [roundArchiveId], references: [id], onDelete: Cascade)
+  roundArchive   RoundArchive @relation(fields: [roundArchiveId], references: [id], onDelete: Cascade)
 
   @@index([roundKey])
   @@index([workerName])
+  @@index([address])
   @@index([rank])
   @@unique([roundKey, workerName])
 }
 
 model WorkerProfile {
-  id                Int       @id @default(autoincrement())
-  workerName        String    @unique
-  displayName       String
-  bestShareEver     Float     @default(0)
-  totalShares       Int       @default(0)
-  roundsParticipated Int      @default(0)
-  currentStreak     Int       @default(0)
-  bestStreak        Int       @default(0)
-  xp                Float     @default(0)
-  level             Int       @default(1)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                 Int       @id @default(autoincrement())
+  workerName         String    @unique
+  address            String?
+  displayName        String
+  bestShareEver      Float     @default(0)
+  totalShares        Int       @default(0)
+  roundsParticipated Int       @default(0)
+  currentStreak      Int       @default(0)
+  bestStreak         Int       @default(0)
+  xp                 Float     @default(0)
+  level              Int       @default(1)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([level])
   @@index([bestShareEver])
+  @@index([address])
 }

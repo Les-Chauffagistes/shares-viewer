@@ -91,6 +91,7 @@ export const WorkerRoundStatScalarFieldEnum = {
   roundArchiveId: 'roundArchiveId',
   roundKey: 'roundKey',
   workerName: 'workerName',
+  address: 'address',
   displayName: 'displayName',
   bestShare: 'bestShare',
   sharesCount: 'sharesCount',
@@ -109,6 +110,7 @@ export type WorkerRoundStatScalarFieldEnum = (typeof WorkerRoundStatScalarFieldE
 export const WorkerProfileScalarFieldEnum = {
   id: 'id',
   workerName: 'workerName',
+  address: 'address',
   displayName: 'displayName',
   bestShareEver: 'bestShareEver',
   totalShares: 'totalShares',
