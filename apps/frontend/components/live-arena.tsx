@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { createAvatar } from "@dicebear/core";
+import { pixelArt, adventurer } from "@dicebear/collection";
 
 type LiveWorkerState = {
   address: string;
@@ -49,6 +51,58 @@ function buildDisplayName(address: string, workerName: string): string {
   }
 
   return `${address}.${minerName}`;
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+
+  return Math.abs(hash);
+}
+
+function WorkerSprite({
+  workerName,
+  displaySize,
+}: {
+  workerName: string;
+  displaySize: number;
+}) {
+  const seed = extractMinerName(workerName);
+  const hash = hashString(seed);
+
+  const svg = useMemo(() => {
+    const useAltStyle = hash % 5 === 0;
+
+    const avatar = createAvatar(useAltStyle ? adventurer : pixelArt, {
+      seed,
+      size: 96,
+      radius: 12,
+      backgroundColor: ["1f2937", "0f172a", "111827"],
+      // variations stables selon le worker
+      flip: hash % 2 === 0,
+      rotate: (hash % 4) * 90,
+      scale: 90 + (hash % 8),
+    });
+
+    return avatar.toString();
+  }, [hash, seed]);
+
+  return (
+    <div
+      className="flex items-center justify-center overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
+      style={{
+        width: `${48 * displaySize}px`,
+        height: `${48 * displaySize}px`,
+        minWidth: `${48 * displaySize}px`,
+        minHeight: `${48 * displaySize}px`,
+      }}
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  );
 }
 
 export function LiveArena() {
@@ -169,17 +223,11 @@ export function LiveArena() {
                 </div>
               </div>
 
-              <div className="mb-6 flex min-h-[180px] items-end justify-center overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
-                <div
-                  className="flex items-center justify-center rounded-full bg-orange-500 font-bold text-black transition-all duration-300"
-                  style={{
-                    width: `${48 * worker.size}px`,
-                    height: `${48 * worker.size}px`,
-                  }}
-                  title={`${buildDisplayName(worker.address, worker.workerName)} — ${Math.round(worker.bestShare)}`}
-                >
-                  ⛏️
-                </div>
+              <div className="mb-6 flex min-h-[180px] items-center justify-center overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
+                <WorkerSprite
+                  workerName={worker.workerName}
+                  displaySize={Math.max(1.4, Math.min(2.4, worker.size))}
+                />
               </div>
 
               <div className="space-y-1 text-sm text-neutral-300">
@@ -196,7 +244,9 @@ export function LiveArena() {
 
                 <p>
                   Worker{" "}
-                  <span className="text-neutral-400">{worker.workerName}</span>
+                  <span className="text-neutral-400">
+                    {extractMinerName(worker.workerName)}
+                  </span>
                 </p>
               </div>
             </article>
