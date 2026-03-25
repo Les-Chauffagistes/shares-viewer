@@ -2,8 +2,11 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { SharesModule } from "./shares/shares.module";
+import { DatabaseModule } from "./database/database.module";
+import { RedisModule } from "./redis/redis.module";
 import { RealtimeModule } from "./realtime/realtime.module";
+import { SharesModule } from "./shares/shares.module";
+import { RoundStateModule } from "./round-state/round-state.module";
 
 @Module({
   imports: [
@@ -11,7 +14,10 @@ import { RealtimeModule } from "./realtime/realtime.module";
       isGlobal: true,
       envFilePath: ".env",
     }),
+    DatabaseModule,
+    RedisModule,
     RealtimeModule,
+    RoundStateModule,
     SharesModule,
   ],
   controllers: [AppController],

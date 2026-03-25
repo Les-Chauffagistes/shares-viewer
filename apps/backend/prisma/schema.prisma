@@ -1,0 +1,66 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model RoundArchive {
+  id           Int               @id @default(autoincrement())
+  roundKey     String            @unique
+  startedAt    DateTime?
+  endedAt      DateTime
+  workersCount Int
+  sharesCount  Int
+  bestShare    Float
+  createdAt    DateTime          @default(now())
+
+  workerStats  WorkerRoundStat[]
+
+  @@index([endedAt])
+}
+
+model WorkerRoundStat {
+  id             Int          @id @default(autoincrement())
+  roundArchiveId Int
+  roundKey       String
+  workerName     String
+  displayName    String
+  bestShare      Float
+  sharesCount    Int
+  rank           Int
+  participated   Boolean
+  streakAtTime   Int
+  xpGained       Float
+  totalXpAfter   Float
+  levelAfter     Int
+  createdAt      DateTime     @default(now())
+
+  roundArchive   RoundArchive  @relation(fields: [roundArchiveId], references: [id], onDelete: Cascade)
+
+  @@index([roundKey])
+  @@index([workerName])
+  @@index([rank])
+  @@unique([roundKey, workerName])
+}
+
+model WorkerProfile {
+  id                Int       @id @default(autoincrement())
+  workerName        String    @unique
+  displayName       String
+  bestShareEver     Float     @default(0)
+  totalShares       Int       @default(0)
+  roundsParticipated Int      @default(0)
+  currentStreak     Int       @default(0)
+  bestStreak        Int       @default(0)
+  xp                Float     @default(0)
+  level             Int       @default(1)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([level])
+  @@index([bestShareEver])
+}

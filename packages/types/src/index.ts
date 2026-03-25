@@ -32,3 +32,55 @@ export type WorkerState = {
   size: number;
   round: string;
 };
+
+export type LiveWorkerState = {
+  workerName: string;
+  displayName: string;
+  bestShare: number;
+  sharesCount: number;
+  lastShareTs: number;
+  size: number;
+  round: string;
+};
+
+export type ArchivedRoundWorker = {
+  workerName: string;
+  displayName: string;
+  bestShare: number;
+  sharesCount: number;
+  lastShareTs: number;
+};
+
+export type ArchivedRoundSnapshot = {
+  roundKey: string;
+  startedAt?: number | null;
+  endedAt: number;
+  workers: ArchivedRoundWorker[];
+};
+
+export type WorkerRoundStatDto = {
+  id: number;
+  roundKey: string;
+  workerName: string;
+  displayName: string;
+  bestShare: number;
+  sharesCount: number;
+  rank: number;
+  participated: boolean;
+  streakAtTime: number;
+  xpGained: number;
+  totalXpAfter: number;
+  levelAfter: number;
+};
+
+export type RoundArchiveDto = {
+  id: number;
+  roundKey: string;
+  startedAt: string | null;
+  endedAt: string;
+  workersCount: number;
+  sharesCount: number;
+  bestShare: number;
+  createdAt: string;
+  workerStats: WorkerRoundStatDto[];
+};

@@ -53,7 +53,7 @@ export class SharesStreamService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.logger.log(`Connexion au websocket source: ${url}`);
+    this.logger.log(`Connexion au websocket global: ${url}`);
 
     this.ws = new WebSocket(url, {
       headers: {
@@ -62,13 +62,12 @@ export class SharesStreamService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.ws.on("open", () => {
-      this.logger.log("Connecté au websocket source");
+      this.logger.log("Connecté au websocket global");
     });
 
-    this.ws.on("message", (data) => {
+    this.ws.on("message", async (data) => {
       try {
         const text = data.toString();
-
         if (!text) return;
 
         const parsed = JSON.parse(text) as RawShareMessage;
@@ -77,7 +76,7 @@ export class SharesStreamService implements OnModuleInit, OnModuleDestroy {
           return;
         }
 
-        this.sharesService.ingest(parsed);
+        await this.sharesService.ingest(parsed);
       } catch (error) {
         this.logger.warn(
           `Message websocket ignoré: ${

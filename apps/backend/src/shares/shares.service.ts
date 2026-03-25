@@ -1,107 +1,78 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { RawShareMessage, WorkerState } from "@shares-viewer/types";
+import { RawShareMessage } from "@shares-viewer/types";
 import { RealtimeGateway } from "../realtime/realtime.gateway";
+import { RoundStateService } from "../round-state/round-state.service";
+import { RoundArchiveService } from "../round-state/round-archive.service";
 
 @Injectable()
 export class SharesService {
   private readonly logger = new Logger(SharesService.name);
 
-  private currentRound: string | null = null;
-  private workers = new Map<string, WorkerState>();
-  private history: { round: string; workers: WorkerState[] }[] = [];
-  private readonly maxHistoryRounds = 20;
+  constructor(
+    private readonly realtimeGateway: RealtimeGateway,
+    private readonly roundStateService: RoundStateService,
+    private readonly roundArchiveService: RoundArchiveService,
+  ) {}
 
-  constructor(private readonly realtimeGateway: RealtimeGateway) {}
-
-  ingest(message: RawShareMessage): void {
-    if (message.type !== "share" || !message.share) return;
-
-    const share = message.share;
-    const round = share.round;
-    const workerName = share.workername;
-
-    if (!round || !workerName) return;
-
-    const workerKey = workerName.toLowerCase();
-
-    if (!this.currentRound) {
-      this.currentRound = round;
-      this.logger.log(`Round initial détecté: ${round}`);
+  async ingest(message: RawShareMessage): Promise<void> {
+    if (message.type !== "share" || !message.share?.round || !message.share?.workername) {
+      return;
     }
 
-    if (this.currentRound !== round) {
-      const previousRound = this.currentRound;
+    const result = await this.roundStateService.ingestShare(message);
 
-      this.flushCurrentRound();
-      this.currentRound = round;
-      this.workers.clear();
+    if (result.changedRound && result.previousRound) {
+      const locked = await this.roundStateService.tryAcquireArchiveLock(
+        result.previousRound,
+      );
 
-      this.logger.log(`Nouveau round détecté: ${round}`);
+      if (locked) {
+        this.logger.log(`Archivage du round ${result.previousRound}`);
+        const snapshot = await this.roundStateService.getArchivedSnapshot(
+          result.previousRound,
+        );
 
-      this.realtimeGateway.emitRoundReset({
-        previousRound,
-        newRound: round,
-        history: this.history,
-      });
+        await this.roundArchiveService.archiveRound(snapshot);
+        await this.roundStateService.resetForNewRound(
+          result.previousRound,
+          result.currentRound,
+          message.share.ts,
+        );
+
+        this.realtimeGateway.emitRoundReset({
+          previousRound: result.previousRound,
+          newRound: result.currentRound,
+        });
+      }
     }
 
-    const current = this.workers.get(workerKey);
-    const bestSdiff = Math.max(current?.bestSdiff ?? 0, Number(share.sdiff) || 0);
-    const sharesCount = (current?.sharesCount ?? 0) + 1;
-
-    const next: WorkerState = {
-      workerName,
-      displayName: share.worker || workerName,
-      bestSdiff,
-      sharesCount,
-      lastShareTs: Number(share.ts) || Date.now() / 1000,
-      size: this.computeSize(bestSdiff),
-      round,
-    };
-
-    this.workers.set(workerKey, next);
+    const liveWorkers = await this.roundStateService.getLiveRoundState(result.currentRound);
 
     this.realtimeGateway.emitWorkerUpdated({
       type: "worker_updated",
-      worker: next,
+      worker: result.updatedWorker,
     });
 
     this.realtimeGateway.emitLiveState({
       type: "live_state",
-      round: this.currentRound,
-      workers: this.getSortedWorkers(),
+      round: result.currentRound,
+      workers: liveWorkers,
     });
   }
 
-  getLiveState() {
+  async getLiveState() {
+    const currentRound = await this.roundStateService.getCurrentRound();
+
+    if (!currentRound) {
+      return {
+        round: null,
+        workers: [],
+      };
+    }
+
     return {
-      round: this.currentRound,
-      workers: this.getSortedWorkers(),
+      round: currentRound,
+      workers: await this.roundStateService.getLiveRoundState(currentRound),
     };
-  }
-
-  getHistory() {
-    return this.history;
-  }
-
-  private flushCurrentRound() {
-    if (!this.currentRound) return;
-
-    this.history.unshift({
-      round: this.currentRound,
-      workers: this.getSortedWorkers(),
-    });
-
-    this.history = this.history.slice(0, this.maxHistoryRounds);
-  }
-
-  private getSortedWorkers() {
-    return Array.from(this.workers.values()).sort(
-      (a, b) => b.bestSdiff - a.bestSdiff,
-    );
-  }
-
-  private computeSize(bestSdiff: number): number {
-    return Math.max(0.8, Math.min(4, 1 + Math.log10(bestSdiff + 1) * 0.35));
   }
 }
