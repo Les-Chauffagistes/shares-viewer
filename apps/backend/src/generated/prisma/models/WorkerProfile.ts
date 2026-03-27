@@ -331,6 +331,7 @@ export type WorkerProfileOrderByWithRelationInput = {
 export type WorkerProfileWhereUniqueInput = Prisma.AtLeast<{
   id?: number
   addressId_workerName?: Prisma.WorkerProfileAddressIdWorkerNameCompoundUniqueInput
+  addressId_worker?: Prisma.WorkerProfileAddressIdWorkerCompoundUniqueInput
   AND?: Prisma.WorkerProfileWhereInput | Prisma.WorkerProfileWhereInput[]
   OR?: Prisma.WorkerProfileWhereInput[]
   NOT?: Prisma.WorkerProfileWhereInput | Prisma.WorkerProfileWhereInput[]
@@ -347,7 +348,7 @@ export type WorkerProfileWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"WorkerProfile"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"WorkerProfile"> | Date | string
   address?: Prisma.XOR<Prisma.WorkerAddressScalarRelationFilter, Prisma.WorkerAddressWhereInput>
-}, "id" | "addressId_workerName">
+}, "id" | "addressId_workerName" | "addressId_worker">
 
 export type WorkerProfileOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -500,6 +501,11 @@ export type WorkerProfileUncheckedUpdateManyInput = {
 export type WorkerProfileAddressIdWorkerNameCompoundUniqueInput = {
   addressId: string
   workerName: string
+}
+
+export type WorkerProfileAddressIdWorkerCompoundUniqueInput = {
+  addressId: string
+  worker: string
 }
 
 export type WorkerProfileCountOrderByAggregateInput = {

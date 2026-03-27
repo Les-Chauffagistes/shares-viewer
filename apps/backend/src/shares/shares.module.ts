@@ -4,10 +4,11 @@ import { SharesService } from "./shares.service";
 import { SharesStreamService } from "./shares-stream.service";
 import { RealtimeModule } from "../realtime/realtime.module";
 import { RoundStateModule } from "../round-state/round-state.module";
+import { WorkerIdentityService } from "./worker-identity.service";
 
 @Module({
   imports: [ConfigModule, RealtimeModule, RoundStateModule],
-  providers: [SharesService, SharesStreamService],
-  exports: [SharesService],
+  providers: [SharesService, SharesStreamService, WorkerIdentityService],
+  exports: [SharesService, WorkerIdentityService],
 })
 export class SharesModule {}

@@ -76,9 +76,10 @@ export type ArchivedRoundSnapshot = {
 export type WorkerRoundStatDto = {
   id: number;
   roundKey: string;
-  workerName: string;
-  address: string;
-  displayName: string;
+  workerName: string; // brut
+  worker: string;     // suffixe
+  address: string;    // label ou id selon ton API
+  displayName: string; // calculé côté backend avant envoi
   bestShare: number;
   sharesCount: number;
   rank: number;

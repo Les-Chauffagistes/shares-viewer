@@ -69,6 +69,7 @@ model WorkerProfile {
   address            WorkerAddress @relation(fields: [addressId], references: [id], onDelete: Restrict)
 
   @@unique([addressId, workerName])
+  @@unique([addressId, worker])
   @@index([worker])
   @@index([level])
   @@index([bestShareEver])
