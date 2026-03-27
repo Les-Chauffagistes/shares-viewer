@@ -1,8 +1,16 @@
+type WorkerAddress = {
+  id: string;
+  rawAddress: string;
+  isPublic: boolean;
+  label: string;
+};
+
 type WorkerRoundStat = {
   id: number;
   roundKey: string;
   workerName: string;
-  displayName: string;
+  worker: string;
+  addressId: string;
   bestShare: number;
   sharesCount: number;
   rank: number;
@@ -11,6 +19,7 @@ type WorkerRoundStat = {
   xpGained: number;
   totalXpAfter: number;
   levelAfter: number;
+  address: WorkerAddress;
 };
 
 type RoundArchive = {
@@ -29,6 +38,10 @@ function roundHexToDecimal(round: string): string {
   const parsed = parseInt(round, 16);
   if (Number.isNaN(parsed)) return round;
   return `${round} (${parsed.toLocaleString("fr-FR")})`;
+}
+
+function buildArchivedDisplayName(worker: WorkerRoundStat): string {
+  return `${worker.address.label}.${worker.worker}`;
 }
 
 async function getHistory(): Promise<RoundArchive[]> {
@@ -114,11 +127,15 @@ export async function RecentRounds() {
                   <tbody>
                     {round.workerStats.slice(0, 10).map((worker) => (
                       <tr
-                        key={`${round.roundKey}-${worker.workerName}`}
+                        key={`${round.roundKey}-${worker.addressId}-${worker.workerName}`}
                         className="border-b border-neutral-800/60"
                       >
-                        <td className="px-2 py-2 font-semibold">{worker.rank}</td>
-                        <td className="px-2 py-2">{worker.displayName}</td>
+                        <td className="px-2 py-2 font-semibold">
+                          {worker.rank}
+                        </td>
+                        <td className="px-2 py-2">
+                          {buildArchivedDisplayName(worker)}
+                        </td>
                         <td className="px-2 py-2">
                           {Math.round(worker.bestShare).toLocaleString("fr-FR")}
                         </td>
