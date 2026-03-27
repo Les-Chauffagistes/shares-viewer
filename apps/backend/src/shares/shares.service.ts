@@ -1,10 +1,18 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { LiveWorkerState, RawShareMessage } from "@shares-viewer/types";
+import {
+  ArchivedRoundWorker,
+  LiveWorkerState,
+  RawShareMessage,
+} from "@shares-viewer/types";
 import { RealtimeGateway } from "../realtime/realtime.gateway";
 import { RoundStateService } from "../round-state/round-state.service";
 import { RoundArchiveService } from "../round-state/round-archive.service";
 
 type PublicLiveWorkerState = LiveWorkerState & {
+  realWorkerName?: never;
+};
+
+type PublicArchivedRoundWorker = ArchivedRoundWorker & {
   realWorkerName?: never;
 };
 
@@ -36,6 +44,8 @@ export class SharesService {
       return;
     }
 
+    const updatedWorker = result.updatedWorker;
+
     if (result.changedRound && result.previousRound) {
       const alreadyArchived = await this.roundStateService.isRoundArchived(
         result.previousRound,
@@ -58,7 +68,12 @@ export class SharesService {
               `Archivage annulé pour ${result.previousRound}: snapshot vide`,
             );
           } else {
-            await this.roundArchiveService.archiveRound(snapshot);
+            const anonymizedSnapshot = {
+              ...snapshot,
+              workers: this.anonymizeArchivedWorkers(snapshot.workers),
+            };
+
+            await this.roundArchiveService.archiveRound(anonymizedSnapshot);
             await this.roundStateService.markRoundArchived(result.previousRound);
           }
 
@@ -81,12 +96,29 @@ export class SharesService {
     );
 
     const publicWorkers = this.anonymizeWorkers(liveWorkersRaw);
-    const updatedPublicWorker = this.anonymizeWorkers([result.updatedWorker])[0];
 
-    this.realtimeGateway.emitWorkerShareUpdated({
-      type: "worker_share_updated",
-      worker: updatedPublicWorker,
-    });
+    const updatedPublicWorker = this.anonymizeWorkers([
+      updatedWorker,
+      ...liveWorkersRaw.filter(
+        (worker) =>
+          !(
+            worker.address === updatedWorker.address &&
+            worker.workerName === updatedWorker.workerName
+          ),
+      ),
+    ]).find(
+      (worker) =>
+        worker.lastShareTs === updatedWorker.lastShareTs &&
+        worker.bestShare === updatedWorker.bestShare &&
+        worker.sharesCount === updatedWorker.sharesCount,
+    );
+
+    if (updatedPublicWorker) {
+      this.realtimeGateway.emitWorkerShareUpdated({
+        type: "worker_share_updated",
+        worker: updatedPublicWorker,
+      });
+    }
 
     this.realtimeGateway.emitLiveState({
       type: "live_state",
@@ -116,31 +148,18 @@ export class SharesService {
   }
 
   private anonymizeWorkers(workers: LiveWorkerState[]): PublicLiveWorkerState[] {
-    const sortedWorkers = [...workers].sort((a, b) => {
-      const byAddress = a.address.localeCompare(b.address);
-      if (byAddress !== 0) return byAddress;
-
-      return a.workerName.localeCompare(b.workerName);
-    });
-
-    const workerAliasMap = new Map<string, string>();
-    let counter = 1;
-
-    for (const worker of sortedWorkers) {
-      if (!workerAliasMap.has(worker.workerName)) {
-        workerAliasMap.set(worker.workerName, `worker${counter}`);
-        counter += 1;
-      }
-    }
+    const { workerAliasMap } = this.buildWorkerAliasMap(workers);
 
     return workers
       .map((worker) => {
+        const displayAddress = this.toDisplayAddress(worker.address);
+
         const anonymousWorkerName =
           worker.address === SharesService.PUBLIC_ADDRESS
             ? worker.workerName
-            : (workerAliasMap.get(worker.workerName) ?? "worker?");
-
-        const displayAddress = this.toDisplayAddress(worker.address);
+            : (workerAliasMap.get(
+                this.workerAliasKey(worker.address, worker.workerName),
+              ) ?? "worker?");
 
         return {
           ...worker,
@@ -152,15 +171,79 @@ export class SharesService {
       .sort((a, b) => b.bestShare - a.bestShare);
   }
 
+  private anonymizeArchivedWorkers(
+    workers: ArchivedRoundWorker[],
+  ): PublicArchivedRoundWorker[] {
+    const { workerAliasMap } = this.buildWorkerAliasMap(workers);
+
+    return workers
+      .map((worker) => {
+        const displayAddress = this.toDisplayAddress(worker.address);
+
+        const anonymousWorkerName =
+          worker.address === SharesService.PUBLIC_ADDRESS
+            ? worker.workerName
+            : (workerAliasMap.get(
+                this.workerAliasKey(worker.address, worker.workerName),
+              ) ?? "worker?");
+
+        return {
+          ...worker,
+          address: displayAddress,
+          workerName: anonymousWorkerName,
+          displayName: `${displayAddress}.${anonymousWorkerName}`,
+        };
+      })
+      .sort((a, b) => b.bestShare - a.bestShare);
+  }
+
+  private buildWorkerAliasMap(
+    workers: Array<{ address: string; workerName: string }>,
+  ): {
+    workerAliasMap: Map<string, string>;
+  } {
+    const sorted = [...workers].sort((a, b) => {
+      const byAddress = a.address.localeCompare(b.address);
+      if (byAddress !== 0) return byAddress;
+
+      return a.workerName.localeCompare(b.workerName);
+    });
+
+    const workerAliasMap = new Map<string, string>();
+    const workerCounterByAddress = new Map<string, number>();
+
+    for (const worker of sorted) {
+      if (worker.address === SharesService.PUBLIC_ADDRESS) {
+        continue;
+      }
+
+      const aliasKey = this.workerAliasKey(worker.address, worker.workerName);
+
+      if (!workerAliasMap.has(aliasKey)) {
+        const nextWorkerIndex =
+          (workerCounterByAddress.get(worker.address) ?? 0) + 1;
+
+        workerCounterByAddress.set(worker.address, nextWorkerIndex);
+        workerAliasMap.set(aliasKey, `worker${nextWorkerIndex}`);
+      }
+    }
+
+    return { workerAliasMap };
+  }
+
+  private workerAliasKey(address: string, workerName: string): string {
+    return `${address}::${workerName}`;
+  }
+
   private toDisplayAddress(address: string): string {
     if (address === SharesService.PUBLIC_ADDRESS) {
       return address;
     }
 
-    if (address.length <= 10) {
+    if (address.length <= 9) {
       return address;
     }
 
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    return `${address.slice(0, 6)}...${address.slice(-3)}`;
   }
 }
