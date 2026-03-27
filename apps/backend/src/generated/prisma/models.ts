@@ -11,4 +11,5 @@
 export type * from './models/RoundArchive.js'
 export type * from './models/WorkerRoundStat.js'
 export type * from './models/WorkerProfile.js'
+export type * from './models/WorkerAddress.js'
 export type * from './commonInputTypes.js'

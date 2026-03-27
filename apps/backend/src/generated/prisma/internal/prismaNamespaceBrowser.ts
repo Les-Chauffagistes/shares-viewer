@@ -53,7 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   RoundArchive: 'RoundArchive',
   WorkerRoundStat: 'WorkerRoundStat',
-  WorkerProfile: 'WorkerProfile'
+  WorkerProfile: 'WorkerProfile',
+  WorkerAddress: 'WorkerAddress'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -91,8 +92,8 @@ export const WorkerRoundStatScalarFieldEnum = {
   roundArchiveId: 'roundArchiveId',
   roundKey: 'roundKey',
   workerName: 'workerName',
-  address: 'address',
-  displayName: 'displayName',
+  worker: 'worker',
+  addressId: 'addressId',
   bestShare: 'bestShare',
   sharesCount: 'sharesCount',
   rank: 'rank',
@@ -110,8 +111,8 @@ export type WorkerRoundStatScalarFieldEnum = (typeof WorkerRoundStatScalarFieldE
 export const WorkerProfileScalarFieldEnum = {
   id: 'id',
   workerName: 'workerName',
-  address: 'address',
-  displayName: 'displayName',
+  worker: 'worker',
+  addressId: 'addressId',
   bestShareEver: 'bestShareEver',
   totalShares: 'totalShares',
   roundsParticipated: 'roundsParticipated',
@@ -124,6 +125,18 @@ export const WorkerProfileScalarFieldEnum = {
 } as const
 
 export type WorkerProfileScalarFieldEnum = (typeof WorkerProfileScalarFieldEnum)[keyof typeof WorkerProfileScalarFieldEnum]
+
+
+export const WorkerAddressScalarFieldEnum = {
+  id: 'id',
+  rawAddress: 'rawAddress',
+  isPublic: 'isPublic',
+  label: 'label',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkerAddressScalarFieldEnum = (typeof WorkerAddressScalarFieldEnum)[keyof typeof WorkerAddressScalarFieldEnum]
 
 
 export const SortOrder = {

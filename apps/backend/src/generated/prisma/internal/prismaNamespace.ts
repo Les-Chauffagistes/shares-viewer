@@ -386,7 +386,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   RoundArchive: 'RoundArchive',
   WorkerRoundStat: 'WorkerRoundStat',
-  WorkerProfile: 'WorkerProfile'
+  WorkerProfile: 'WorkerProfile',
+  WorkerAddress: 'WorkerAddress'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "roundArchive" | "workerRoundStat" | "workerProfile"
+    modelProps: "roundArchive" | "workerRoundStat" | "workerProfile" | "workerAddress"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -628,6 +629,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    WorkerAddress: {
+      payload: Prisma.$WorkerAddressPayload<ExtArgs>
+      fields: Prisma.WorkerAddressFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WorkerAddressFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WorkerAddressFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>
+        }
+        findFirst: {
+          args: Prisma.WorkerAddressFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WorkerAddressFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>
+        }
+        findMany: {
+          args: Prisma.WorkerAddressFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>[]
+        }
+        create: {
+          args: Prisma.WorkerAddressCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>
+        }
+        createMany: {
+          args: Prisma.WorkerAddressCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WorkerAddressCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>[]
+        }
+        delete: {
+          args: Prisma.WorkerAddressDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>
+        }
+        update: {
+          args: Prisma.WorkerAddressUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>
+        }
+        deleteMany: {
+          args: Prisma.WorkerAddressDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WorkerAddressUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WorkerAddressUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>[]
+        }
+        upsert: {
+          args: Prisma.WorkerAddressUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkerAddressPayload>
+        }
+        aggregate: {
+          args: Prisma.WorkerAddressAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkerAddress>
+        }
+        groupBy: {
+          args: Prisma.WorkerAddressGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkerAddressGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WorkerAddressCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkerAddressCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -686,8 +761,8 @@ export const WorkerRoundStatScalarFieldEnum = {
   roundArchiveId: 'roundArchiveId',
   roundKey: 'roundKey',
   workerName: 'workerName',
-  address: 'address',
-  displayName: 'displayName',
+  worker: 'worker',
+  addressId: 'addressId',
   bestShare: 'bestShare',
   sharesCount: 'sharesCount',
   rank: 'rank',
@@ -705,8 +780,8 @@ export type WorkerRoundStatScalarFieldEnum = (typeof WorkerRoundStatScalarFieldE
 export const WorkerProfileScalarFieldEnum = {
   id: 'id',
   workerName: 'workerName',
-  address: 'address',
-  displayName: 'displayName',
+  worker: 'worker',
+  addressId: 'addressId',
   bestShareEver: 'bestShareEver',
   totalShares: 'totalShares',
   roundsParticipated: 'roundsParticipated',
@@ -719,6 +794,18 @@ export const WorkerProfileScalarFieldEnum = {
 } as const
 
 export type WorkerProfileScalarFieldEnum = (typeof WorkerProfileScalarFieldEnum)[keyof typeof WorkerProfileScalarFieldEnum]
+
+
+export const WorkerAddressScalarFieldEnum = {
+  id: 'id',
+  rawAddress: 'rawAddress',
+  isPublic: 'isPublic',
+  label: 'label',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkerAddressScalarFieldEnum = (typeof WorkerAddressScalarFieldEnum)[keyof typeof WorkerAddressScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -911,6 +998,7 @@ export type GlobalOmitConfig = {
   roundArchive?: Prisma.RoundArchiveOmit
   workerRoundStat?: Prisma.WorkerRoundStatOmit
   workerProfile?: Prisma.WorkerProfileOmit
+  workerAddress?: Prisma.WorkerAddressOmit
 }
 
 /* Types for Logging */

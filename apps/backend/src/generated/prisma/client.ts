@@ -54,3 +54,8 @@ export type WorkerRoundStat = Prisma.WorkerRoundStatModel
  * 
  */
 export type WorkerProfile = Prisma.WorkerProfileModel
+/**
+ * Model WorkerAddress
+ * 
+ */
+export type WorkerAddress = Prisma.WorkerAddressModel

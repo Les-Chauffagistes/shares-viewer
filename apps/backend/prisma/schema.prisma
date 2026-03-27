@@ -24,12 +24,12 @@ model RoundArchive {
 }
 
 model WorkerRoundStat {
-  id             Int          @id @default(autoincrement())
+  id             Int           @id @default(autoincrement())
   roundArchiveId Int
   roundKey       String
   workerName     String
-  address        String?
-  displayName    String
+  worker         String
+  addressId      String
   bestShare      Float
   sharesCount    Int
   rank           Int
@@ -38,33 +38,54 @@ model WorkerRoundStat {
   xpGained       Float
   totalXpAfter   Float
   levelAfter     Int
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime      @default(now())
 
-  roundArchive   RoundArchive @relation(fields: [roundArchiveId], references: [id], onDelete: Cascade)
+  roundArchive   RoundArchive  @relation(fields: [roundArchiveId], references: [id], onDelete: Cascade)
+  address        WorkerAddress @relation(fields: [addressId], references: [id], onDelete: Restrict)
 
   @@index([roundKey])
   @@index([workerName])
-  @@index([address])
+  @@index([worker])
+  @@index([addressId])
   @@index([rank])
-  @@unique([roundKey, workerName])
+  @@unique([roundKey, addressId, workerName])
 }
 
 model WorkerProfile {
-  id                 Int       @id @default(autoincrement())
-  workerName         String    @unique
-  address            String?
-  displayName        String
-  bestShareEver      Float     @default(0)
-  totalShares        Int       @default(0)
-  roundsParticipated Int       @default(0)
-  currentStreak      Int       @default(0)
-  bestStreak         Int       @default(0)
-  xp                 Float     @default(0)
-  level              Int       @default(1)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                 Int           @id @default(autoincrement())
+  workerName         String
+  worker             String
+  addressId          String
+  bestShareEver      Float         @default(0)
+  totalShares        Int           @default(0)
+  roundsParticipated Int           @default(0)
+  currentStreak      Int           @default(0)
+  bestStreak         Int           @default(0)
+  xp                 Float         @default(0)
+  level              Int           @default(1)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
+  address            WorkerAddress @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  @@unique([addressId, workerName])
+  @@index([worker])
   @@index([level])
   @@index([bestShareEver])
-  @@index([address])
+  @@index([addressId])
+}
+
+model WorkerAddress {
+  id               String   @id
+  rawAddress       String   @unique
+  isPublic         Boolean  @default(false)
+  label            String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workerProfiles   WorkerProfile[]
+  workerRoundStats WorkerRoundStat[]
+
+  @@index([isPublic])
+  @@index([label])
 }

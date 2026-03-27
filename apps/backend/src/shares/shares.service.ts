@@ -1,18 +1,15 @@
 import { Injectable, Logger } from "@nestjs/common";
 import {
-  ArchivedRoundWorker,
+  ArchivedRoundSnapshot,
   LiveWorkerState,
   RawShareMessage,
 } from "@shares-viewer/types";
 import { RealtimeGateway } from "../realtime/realtime.gateway";
 import { RoundStateService } from "../round-state/round-state.service";
 import { RoundArchiveService } from "../round-state/round-archive.service";
+import { ArchivedRoundSnapshotForDb } from "./types/archive-db.types";
 
 type PublicLiveWorkerState = LiveWorkerState & {
-  realWorkerName?: never;
-};
-
-type PublicArchivedRoundWorker = ArchivedRoundWorker & {
   realWorkerName?: never;
 };
 
@@ -68,12 +65,9 @@ export class SharesService {
               `Archivage annulé pour ${result.previousRound}: snapshot vide`,
             );
           } else {
-            const anonymizedSnapshot = {
-              ...snapshot,
-              workers: this.anonymizeArchivedWorkers(snapshot.workers),
-            };
+            const archiveSnapshot = this.buildArchivedSnapshotForDb(snapshot);
 
-            await this.roundArchiveService.archiveRound(anonymizedSnapshot);
+            await this.roundArchiveService.archiveRound(archiveSnapshot);
             await this.roundStateService.markRoundArchived(result.previousRound);
           }
 
@@ -171,30 +165,46 @@ export class SharesService {
       .sort((a, b) => b.bestShare - a.bestShare);
   }
 
-  private anonymizeArchivedWorkers(
-    workers: ArchivedRoundWorker[],
-  ): PublicArchivedRoundWorker[] {
-    const { workerAliasMap } = this.buildWorkerAliasMap(workers);
+  private buildArchivedSnapshotForDb(
+    snapshot: ArchivedRoundSnapshot,
+  ): ArchivedRoundSnapshotForDb {
+    const { workerAliasMap } = this.buildWorkerAliasMap(snapshot.workers);
 
-    return workers
+    const workers = snapshot.workers
       .map((worker) => {
-        const displayAddress = this.toDisplayAddress(worker.address);
+        const isPublic = worker.address === SharesService.PUBLIC_ADDRESS;
 
-        const anonymousWorkerName =
-          worker.address === SharesService.PUBLIC_ADDRESS
-            ? worker.workerName
-            : (workerAliasMap.get(
-                this.workerAliasKey(worker.address, worker.workerName),
-              ) ?? "worker?");
+        const realWorker = this.extractWorkerSuffix(worker.workerName);
+
+        const workerAlias = isPublic
+          ? realWorker
+          : (workerAliasMap.get(
+              this.workerAliasKey(worker.address, worker.workerName),
+            ) ?? "worker?");
+
+        const addressId = this.toAddressId(worker.address);
+        const addressLabel = this.toDisplayAddress(worker.address);
 
         return {
-          ...worker,
-          address: displayAddress,
-          workerName: anonymousWorkerName,
-          displayName: `${displayAddress}.${anonymousWorkerName}`,
+          workerName: worker.workerName,
+          worker: workerAlias,
+          addressId,
+          addressLabel,
+          rawAddress: worker.address,
+          isPublic,
+          bestShare: worker.bestShare,
+          sharesCount: worker.sharesCount,
+          lastShareTs: worker.lastShareTs,
         };
       })
       .sort((a, b) => b.bestShare - a.bestShare);
+
+    return {
+      roundKey: snapshot.roundKey,
+      startedAt: snapshot.startedAt ?? null,
+      endedAt: snapshot.endedAt,
+      workers,
+    };
   }
 
   private buildWorkerAliasMap(
@@ -237,13 +247,41 @@ export class SharesService {
 
   private toDisplayAddress(address: string): string {
     if (address === SharesService.PUBLIC_ADDRESS) {
+      return "chauff_pool";
+    }
+
+    if (address.length <= 11) {
       return address;
     }
 
-    if (address.length <= 9) {
-      return address;
+    return `${address.slice(0, 7)}...${address.slice(-4)}`;
+  }
+
+  private toAddressId(address: string): string {
+    if (address === SharesService.PUBLIC_ADDRESS) {
+      return "chauff_pool";
     }
 
-    return `${address.slice(0, 6)}...${address.slice(-3)}`;
+    return address;
+  }
+
+  private extractWorkerFromWorkerName(workerName: string): string {
+    const lastDotIndex = workerName.lastIndexOf(".");
+
+    if (lastDotIndex === -1 || lastDotIndex === workerName.length - 1) {
+      return workerName;
+    }
+
+    return workerName.slice(lastDotIndex + 1);
+  }
+
+  private extractWorkerSuffix(workerName: string): string {
+    const lastDotIndex = workerName.lastIndexOf(".");
+
+    if (lastDotIndex === -1 || lastDotIndex === workerName.length - 1) {
+      return workerName;
+    }
+
+    return workerName.slice(lastDotIndex + 1);
   }
 }

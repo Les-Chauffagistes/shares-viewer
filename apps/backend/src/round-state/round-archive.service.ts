@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "../generated/prisma/client";
 import { PrismaService } from "../database/prisma.service";
 import { LevelService } from "./level.service";
-import { ArchivedRoundSnapshot } from "@shares-viewer/types";
+import { ArchivedRoundSnapshotForDb } from "../shares/types/archive-db.types";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -15,24 +15,32 @@ export class RoundArchiveService {
     private readonly levelService: LevelService,
   ) {}
 
-  async archiveRound(snapshot: ArchivedRoundSnapshot) {
+  async archiveRound(snapshot: ArchivedRoundSnapshotForDb) {
     if (!snapshot.workers.length) {
       this.logger.warn(`Round ${snapshot.roundKey} ignoré: aucun worker`);
       return null;
     }
 
     const bestShare = Math.max(...snapshot.workers.map((w) => w.bestShare), 0);
-    const sharesCount = snapshot.workers.reduce((acc, w) => acc + w.sharesCount, 0);
-    const workerNames = snapshot.workers.map((w) => w.workerName);
+    const sharesCount = snapshot.workers.reduce(
+      (acc, w) => acc + w.sharesCount,
+      0,
+    );
 
     const existingProfiles = await this.prisma.workerProfile.findMany({
       where: {
-        workerName: { in: workerNames },
+        OR: snapshot.workers.map((worker) => ({
+          addressId: worker.addressId,
+          workerName: worker.workerName,
+        })),
       },
     });
 
     const existingProfilesMap = new Map(
-      existingProfiles.map((profile) => [profile.workerName, profile]),
+      existingProfiles.map((profile) => [
+        this.profileKey(profile.addressId, profile.workerName),
+        profile,
+      ]),
     );
 
     return this.prisma.$transaction(
@@ -47,7 +55,9 @@ export class RoundArchiveService {
           },
           create: {
             roundKey: snapshot.roundKey,
-            startedAt: snapshot.startedAt ? new Date(snapshot.startedAt * 1000) : null,
+            startedAt: snapshot.startedAt
+              ? new Date(snapshot.startedAt * 1000)
+              : null,
             endedAt: new Date(snapshot.endedAt * 1000),
             workersCount: snapshot.workers.length,
             sharesCount,
@@ -59,7 +69,24 @@ export class RoundArchiveService {
           const worker = snapshot.workers[i];
           const rank = i + 1;
 
-          const existingProfile = existingProfilesMap.get(worker.workerName);
+          await tx.workerAddress.upsert({
+            where: { id: worker.addressId },
+            update: {
+              rawAddress: worker.rawAddress,
+              isPublic: worker.isPublic,
+              label: worker.addressLabel,
+            },
+            create: {
+              id: worker.addressId,
+              rawAddress: worker.rawAddress,
+              isPublic: worker.isPublic,
+              label: worker.addressLabel,
+            },
+          });
+
+          const existingProfile = existingProfilesMap.get(
+            this.profileKey(worker.addressId, worker.workerName),
+          );
 
           const nextStreak = (existingProfile?.currentStreak ?? 0) + 1;
           const xpGained = this.levelService.computeXpGain({
@@ -72,11 +99,19 @@ export class RoundArchiveService {
           const levelAfter = this.levelService.computeLevel(totalXpAfter);
 
           await tx.workerProfile.upsert({
-            where: { workerName: worker.workerName },
+            where: {
+              addressId_workerName: {
+                addressId: worker.addressId,
+                workerName: worker.workerName,
+              },
+            },
             update: {
-              address: worker.address,
-              displayName: worker.displayName,
-              bestShareEver: Math.max(existingProfile?.bestShareEver ?? 0, worker.bestShare),
+              worker: worker.worker,
+              addressId: worker.addressId,
+              bestShareEver: Math.max(
+                existingProfile?.bestShareEver ?? 0,
+                worker.bestShare,
+              ),
               totalShares: (existingProfile?.totalShares ?? 0) + worker.sharesCount,
               roundsParticipated: (existingProfile?.roundsParticipated ?? 0) + 1,
               currentStreak: nextStreak,
@@ -86,8 +121,8 @@ export class RoundArchiveService {
             },
             create: {
               workerName: worker.workerName,
-              address: worker.address,
-              displayName: worker.displayName,
+              worker: worker.worker,
+              addressId: worker.addressId,
               bestShareEver: worker.bestShare,
               totalShares: worker.sharesCount,
               roundsParticipated: 1,
@@ -100,15 +135,16 @@ export class RoundArchiveService {
 
           await tx.workerRoundStat.upsert({
             where: {
-              roundKey_workerName: {
+              roundKey_addressId_workerName: {
                 roundKey: snapshot.roundKey,
+                addressId: worker.addressId,
                 workerName: worker.workerName,
               },
             },
             update: {
               roundArchiveId: roundArchive.id,
-              address: worker.address,
-              displayName: worker.displayName,
+              addressId: worker.addressId,
+              worker: worker.worker,
               bestShare: worker.bestShare,
               sharesCount: worker.sharesCount,
               rank,
@@ -122,8 +158,8 @@ export class RoundArchiveService {
               roundArchiveId: roundArchive.id,
               roundKey: snapshot.roundKey,
               workerName: worker.workerName,
-              address: worker.address,
-              displayName: worker.displayName,
+              worker: worker.worker,
+              addressId: worker.addressId,
               bestShare: worker.bestShare,
               sharesCount: worker.sharesCount,
               rank,
@@ -138,7 +174,10 @@ export class RoundArchiveService {
 
         await this.resetStreaksForAbsentWorkers(
           tx,
-          snapshot.workers.map((w) => w.workerName),
+          snapshot.workers.map((worker) => ({
+            addressId: worker.addressId,
+            workerName: worker.workerName,
+          })),
         );
 
         await this.keepOnlyLastFiveRounds(tx);
@@ -151,18 +190,49 @@ export class RoundArchiveService {
     );
   }
 
+  private profileKey(addressId: string, workerName: string): string {
+    return `${addressId}::${workerName}`;
+  }
+
   private async resetStreaksForAbsentWorkers(
     tx: TxClient,
-    presentWorkerNames: string[],
+    presentWorkers: Array<{ addressId: string; workerName: string }>,
   ) {
-    if (!presentWorkerNames.length) {
+    if (!presentWorkers.length) {
+      return;
+    }
+
+    const activeProfiles = await tx.workerProfile.findMany({
+      where: {
+        currentStreak: { gt: 0 },
+      },
+      select: {
+        addressId: true,
+        workerName: true,
+      },
+    });
+
+    const presentKeys = new Set(
+      presentWorkers.map((worker) =>
+        this.profileKey(worker.addressId, worker.workerName),
+      ),
+    );
+
+    const profilesToReset = activeProfiles.filter(
+      (profile) =>
+        !presentKeys.has(this.profileKey(profile.addressId, profile.workerName)),
+    );
+
+    if (!profilesToReset.length) {
       return;
     }
 
     await tx.workerProfile.updateMany({
       where: {
-        workerName: { notIn: presentWorkerNames },
-        currentStreak: { gt: 0 },
+        OR: profilesToReset.map((profile) => ({
+          addressId: profile.addressId,
+          workerName: profile.workerName,
+        })),
       },
       data: {
         currentStreak: 0,
@@ -176,9 +246,11 @@ export class RoundArchiveService {
       select: { id: true },
     });
 
-    if (rounds.length <= 5) return;
+    if (rounds.length <= 5) {
+      return;
+    }
 
-    const idsToDelete = rounds.slice(5).map((r) => r.id);
+    const idsToDelete = rounds.slice(5).map((round) => round.id);
 
     await tx.workerRoundStat.deleteMany({
       where: { roundArchiveId: { in: idsToDelete } },
