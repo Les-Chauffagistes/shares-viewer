@@ -39,6 +39,12 @@ npx prisma migrate dev
 npm run dev
 ```
 
+## reset la db
+
+```bash
+npx prisma migrate reset
+```
+
 ## Lancer le frontend
 
 ```bash
