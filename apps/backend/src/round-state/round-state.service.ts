@@ -18,6 +18,7 @@ type RoundWorkerRedisState = {
 @Injectable()
 export class RoundStateService {
   private readonly logger = new Logger(RoundStateService.name);
+  private static readonly WORKER_SEPARATOR = "::";
 
   constructor(private readonly redisService: RedisService) {}
 
@@ -37,8 +38,12 @@ export class RoundStateService {
     return `sv:round:${round}:workers`;
   }
 
-  private roundWorkerKey(round: string, workerName: string) {
-    return `sv:round:${round}:worker:${workerName}`;
+  private workerCompositeKey(address: string, workerName: string) {
+    return `${address}${RoundStateService.WORKER_SEPARATOR}${workerName}`;
+  }
+
+  private roundWorkerKey(round: string, address: string, workerName: string) {
+    return `sv:round:${round}:worker:${this.workerCompositeKey(address, workerName)}`;
   }
 
   private roundLeaderboardKey(round: string) {
@@ -92,9 +97,7 @@ export class RoundStateService {
     const currentRound = await this.getCurrentRound();
 
     const incomingRoundNum = parseInt(round, 16);
-    const currentRoundNum = currentRound
-      ? parseInt(currentRound, 16)
-      : null;
+    const currentRoundNum = currentRound ? parseInt(currentRound, 16) : null;
 
     if (Number.isNaN(incomingRoundNum)) {
       this.logger.warn(`Round invalide reçu: ${round}`);
@@ -131,11 +134,14 @@ export class RoundStateService {
       await this.setCurrentRound(round, lastShareTs);
     }
 
-    const workerKey = this.roundWorkerKey(round, workerName);
+    const workerCompositeKey = this.workerCompositeKey(address, workerName);
+    const workerKey = this.roundWorkerKey(round, address, workerName);
     const workersSetKey = this.roundWorkersSetKey(round);
     const leaderboardKey = this.roundLeaderboardKey(round);
 
-    const existing = (await this.redis.hgetall(workerKey)) as RoundWorkerRedisState;
+    const existing = (await this.redis.hgetall(
+      workerKey,
+    )) as RoundWorkerRedisState;
     const currentBest = Number(existing.bestShare || 0);
     const currentShares = Number(existing.sharesCount || 0);
 
@@ -143,7 +149,7 @@ export class RoundStateService {
     const nextShares = currentShares + 1;
 
     const multi = this.redis.multi();
-    multi.sadd(workersSetKey, workerName);
+    multi.sadd(workersSetKey, workerCompositeKey);
     multi.hset(workerKey, {
       workerName,
       address,
@@ -152,7 +158,7 @@ export class RoundStateService {
       sharesCount: String(nextShares),
       lastShareTs: String(lastShareTs),
     });
-    multi.zadd(leaderboardKey, nextBest, workerName);
+    multi.zadd(leaderboardKey, nextBest, workerCompositeKey);
     await multi.exec();
 
     return {
@@ -173,13 +179,16 @@ export class RoundStateService {
   }
 
   async getLiveRoundState(round: string): Promise<LiveWorkerState[]> {
-    const workers = await this.redis.smembers(this.roundWorkersSetKey(round));
-    if (!workers.length) return [];
+    const workerKeys = await this.redis.smembers(this.roundWorkersSetKey(round));
+
+    if (!workerKeys.length) {
+      return [];
+    }
 
     const pipeline = this.redis.pipeline();
 
-    for (const workerName of workers) {
-      pipeline.hgetall(this.roundWorkerKey(round, workerName));
+    for (const workerCompositeKey of workerKeys) {
+      pipeline.hgetall(`sv:round:${round}:worker:${workerCompositeKey}`);
     }
 
     const responses = await pipeline.exec();
@@ -188,7 +197,9 @@ export class RoundStateService {
     for (const [, rawValue] of responses ?? []) {
       const raw = rawValue as RoundWorkerRedisState;
 
-      if (!raw?.workerName) continue;
+      if (!raw?.workerName || !raw?.address) {
+        continue;
+      }
 
       result.push({
         workerName: raw.workerName,
@@ -207,9 +218,10 @@ export class RoundStateService {
   }
 
   async getArchivedSnapshot(round: string) {
-    const workers = await this.redis.smembers(this.roundWorkersSetKey(round));
+    const workerKeys = await this.redis.smembers(this.roundWorkersSetKey(round));
     const startedAt = await this.redis.get(this.roundStartedAtKey(round));
-    if (!workers.length) {
+
+    if (!workerKeys.length) {
       return {
         roundKey: round,
         startedAt: startedAt ? Number(startedAt) : null,
@@ -220,8 +232,8 @@ export class RoundStateService {
 
     const pipeline = this.redis.pipeline();
 
-    for (const workerName of workers) {
-      pipeline.hgetall(this.roundWorkerKey(round, workerName));
+    for (const workerCompositeKey of workerKeys) {
+      pipeline.hgetall(`sv:round:${round}:worker:${workerCompositeKey}`);
     }
 
     const responses = await pipeline.exec();
@@ -230,7 +242,9 @@ export class RoundStateService {
     for (const [, rawValue] of responses ?? []) {
       const raw = rawValue as RoundWorkerRedisState;
 
-      if (!raw?.workerName) continue;
+      if (!raw?.workerName || !raw?.address) {
+        continue;
+      }
 
       result.push({
         workerName: raw.workerName,

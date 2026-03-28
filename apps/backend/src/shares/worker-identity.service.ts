@@ -88,7 +88,11 @@ export class WorkerIdentityService {
       };
     }
 
-    const created = await this.findOrCreateWorkerProfile(address, addressId, workerName);
+    const created = await this.findOrCreateWorkerProfile(
+      address,
+      addressId,
+      workerName,
+    );
 
     await this.cacheAlias(addressId, workerName, created.worker);
 
@@ -141,12 +145,8 @@ export class WorkerIdentityService {
       return alreadyExisting;
     }
 
-    for (let attempt = 0; attempt < 10; attempt += 1) {
-      const countForAddress = await this.prisma.workerProfile.count({
-        where: { addressId },
-      });
-
-      const nextAlias = `worker${countForAddress + 1 + attempt}`;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const nextAlias = this.generateRandomAlias();
 
       try {
         return await this.prisma.workerProfile.create({
@@ -191,6 +191,17 @@ export class WorkerIdentityService {
     throw new Error(
       `Impossible de créer un alias stable pour ${addressId}.${workerName} après plusieurs tentatives`,
     );
+  }
+
+  private generateRandomAlias(length = 6): string {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "w-";
+
+    for (let i = 0; i < length; i += 1) {
+      result += chars[Math.floor(Math.random() * chars.length)];
+    }
+
+    return result;
   }
 
   private async cacheAlias(

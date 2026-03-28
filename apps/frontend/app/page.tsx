@@ -1,6 +1,7 @@
 import { LiveArenaCanvas } from "@/components/live-arena-canvas";
 import { TopNav } from "@/components/top-nav";
 
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
