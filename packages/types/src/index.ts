@@ -43,6 +43,7 @@ export type LiveWorkerState = {
   lastShareTs: number;
   size: number;
   round: string;
+  level?: number;
 };
 
 export type LiveAddressState = {

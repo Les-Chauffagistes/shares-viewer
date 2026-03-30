@@ -13,6 +13,7 @@ type RoundWorkerRedisState = {
   bestShare: string;
   sharesCount: string;
   lastShareTs: string;
+  level: string;
 };
 
 @Injectable()
@@ -80,7 +81,10 @@ export class RoundStateService {
     return result === "OK";
   }
 
-  async ingestShare(message: RawShareMessage): Promise<{
+  async ingestShare(
+    message: RawShareMessage,
+    level = 1,
+  ): Promise<{
     currentRound: string;
     changedRound: boolean;
     previousRound: string | null;
@@ -142,8 +146,10 @@ export class RoundStateService {
     const existing = (await this.redis.hgetall(
       workerKey,
     )) as RoundWorkerRedisState;
+
     const currentBest = Number(existing.bestShare || 0);
     const currentShares = Number(existing.sharesCount || 0);
+    const currentLevel = Number(existing.level || level || 1);
 
     const nextBest = Math.max(currentBest, bestIncoming);
     const nextShares = currentShares + 1;
@@ -157,6 +163,7 @@ export class RoundStateService {
       bestShare: String(nextBest),
       sharesCount: String(nextShares),
       lastShareTs: String(lastShareTs),
+      level: String(currentLevel),
     });
     multi.zadd(leaderboardKey, nextBest, workerCompositeKey);
     await multi.exec();
@@ -174,6 +181,7 @@ export class RoundStateService {
         lastShareTs,
         size: this.computeSize(nextBest),
         round,
+        level: currentLevel,
       },
     };
   }
@@ -210,6 +218,7 @@ export class RoundStateService {
         lastShareTs: Number(raw.lastShareTs || 0),
         size: this.computeSize(Number(raw.bestShare || 0)),
         round,
+        level: Number(raw.level || 1),
       });
     }
 

@@ -44,7 +44,15 @@ export class SharesService {
       return;
     }
 
-    const result = await this.roundStateService.ingestShare(message);
+    const resolvedIdentity = await this.workerIdentityService.resolve(
+      message.share.address,
+      message.share.workername,
+    );
+
+    const result = await this.roundStateService.ingestShare(
+      message,
+      resolvedIdentity.level ?? 1,
+    );
 
     if (!result.updatedWorker) {
       return;
@@ -173,6 +181,7 @@ export class SharesService {
       workerName: identity.workerLabel,
       displayName: identity.displayName,
       uniqueKey: `${identity.addressId}::${identity.rawWorkerName}`,
+      level: worker.level ?? identity.level ?? 1,
     };
   }
 
@@ -195,6 +204,7 @@ export class SharesService {
           workerName: identity.workerLabel,
           displayName: identity.displayName,
           uniqueKey: `${identity.addressId}::${identity.rawWorkerName}`,
+          level: worker.level ?? identity.level ?? 1,
         };
       })
       .sort((a, b) => b.bestShare - a.bestShare);

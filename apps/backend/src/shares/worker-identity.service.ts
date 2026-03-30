@@ -10,6 +10,7 @@ export type ResolvedWorkerIdentity = {
   workerLabel: string;
   displayName: string;
   isPublic: boolean;
+  level: number;
 };
 
 @Injectable()
@@ -28,13 +29,25 @@ export class WorkerIdentityService {
     return this.redisService.client;
   }
 
-  async resolve(address: string, workerName: string): Promise<ResolvedWorkerIdentity> {
+  async resolve(
+    address: string,
+    workerName: string,
+  ): Promise<ResolvedWorkerIdentity> {
     const isPublic = address === WorkerIdentityService.PUBLIC_ADDRESS;
     const addressId = this.toAddressId(address);
     const addressLabel = this.toDisplayAddress(address);
 
     if (isPublic) {
       const workerLabel = this.extractWorkerSuffix(workerName);
+
+      const existingPublicProfile = await this.prisma.workerProfile.findUnique({
+        where: {
+          addressId_workerName: {
+            addressId,
+            workerName,
+          },
+        },
+      });
 
       return {
         rawAddress: address,
@@ -44,6 +57,7 @@ export class WorkerIdentityService {
         workerLabel,
         displayName: `${addressLabel}.${workerLabel}`,
         isPublic: true,
+        level: existingPublicProfile?.level ?? 1,
       };
     }
 
@@ -51,14 +65,27 @@ export class WorkerIdentityService {
     const cachedWorkerLabel = await this.redis.get(cacheKey);
 
     if (cachedWorkerLabel) {
+      const existingProfile = await this.prisma.workerProfile.findUnique({
+        where: {
+          addressId_workerName: {
+            addressId,
+            workerName,
+          },
+        },
+        include: {
+          address: true,
+        },
+      });
+
       return {
         rawAddress: address,
         addressId,
-        addressLabel,
+        addressLabel: existingProfile?.address.label ?? addressLabel,
         rawWorkerName: workerName,
         workerLabel: cachedWorkerLabel,
-        displayName: `${addressLabel}.${cachedWorkerLabel}`,
-        isPublic: false,
+        displayName: `${existingProfile?.address.label ?? addressLabel}.${cachedWorkerLabel}`,
+        isPublic: existingProfile?.address.isPublic ?? false,
+        level: existingProfile?.level ?? 1,
       };
     }
 
@@ -85,6 +112,7 @@ export class WorkerIdentityService {
         workerLabel: existing.worker,
         displayName: `${existing.address.label}.${existing.worker}`,
         isPublic: existing.address.isPublic,
+        level: existing.level ?? 1,
       };
     }
 
@@ -104,6 +132,7 @@ export class WorkerIdentityService {
       workerLabel: created.worker,
       displayName: `${created.address.label}.${created.worker}`,
       isPublic: created.address.isPublic,
+      level: created.level ?? 1,
     };
   }
 
