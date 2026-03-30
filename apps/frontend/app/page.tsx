@@ -1,6 +1,5 @@
-import { LiveArenaCanvas } from "@/components/live-arena-canvas";
+import { LiveArenaCanvas } from "@/components/live-arena/LiveArenaCanvas";
 import { TopNav } from "@/components/top-nav";
-
 
 export default function HomePage() {
   return (
