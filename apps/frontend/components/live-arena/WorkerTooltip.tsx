@@ -1,14 +1,17 @@
 "use client";
 
 import { ArenaWorker } from "@/lib/live-arena/types";
+import { getWalkerTitleForLevel } from "@/lib/live-arena/sprites";
 import { extractMinerName } from "./helpers";
-import { getWalkerSource } from "@/lib/live-arena/sprites";
 
 type Props = {
   worker: ArenaWorker;
 };
 
 export function WorkerTooltip({ worker }: Props) {
+  const level = worker.level ?? 1;
+  const currentTitle = getWalkerTitleForLevel(level);
+
   return (
     <div className="absolute right-4 top-4 w-[280px] rounded-2xl border border-neutral-800 bg-neutral-950/95 p-4 shadow-2xl backdrop-blur">
       <p className="text-sm text-neutral-400">Worker</p>
@@ -16,8 +19,11 @@ export function WorkerTooltip({ worker }: Props) {
 
       <div className="mt-4 space-y-2 text-sm text-neutral-300">
         <p>
-          Niveau{" "}
-          <span className="text-neutral-400">{worker.level ?? 1}</span>
+          Niveau <span className="text-neutral-400">{level}</span>
+        </p>
+        <p>
+          Titre actuel{" "}
+          <span className="font-semibold text-yellow-300">{currentTitle}</span>
         </p>
         <p>
           Best share{" "}
@@ -38,20 +44,6 @@ export function WorkerTooltip({ worker }: Props) {
         <p>
           Adresse{" "}
           <span className="break-all text-neutral-400">{worker.address}</span>
-        </p>
-        <p>
-          Dernière share{" "}
-          <span className="text-neutral-400">
-            {worker.lastShareTs
-              ? new Date(worker.lastShareTs).toLocaleString("fr-FR")
-              : "N/A"}
-          </span>
-        </p>
-        <p>
-          Sprite{" "}
-          <span className="text-neutral-400">
-            {getWalkerSource(worker.spriteIndex)}
-          </span>
         </p>
         <p>
           Position{" "}

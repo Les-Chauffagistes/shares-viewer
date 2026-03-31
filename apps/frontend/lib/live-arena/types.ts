@@ -28,11 +28,12 @@ export type LoadedSpriteSheet = {
 
 export type MapObstacleKind =
   | "building"
-  | "parkFence"
   | "lake"
-  | "bench"
   | "tree"
-  | "statue";
+  | "bench"
+  | "statue"
+  | "plaza"
+  | "logo";
 
 export type MapObstacle = {
   id: string;

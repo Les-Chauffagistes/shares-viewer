@@ -10,7 +10,10 @@ import {
 } from "@/lib/live-arena/constants";
 import { clamp } from "@/lib/live-arena/math";
 import { MAP_OBSTACLES } from "@/lib/live-arena/obstacles";
-import { directionToRow } from "@/lib/live-arena/sprites";
+import {
+  directionToRow,
+  getWalkerTitleForLevel,
+} from "@/lib/live-arena/sprites";
 import {
   getMaxBestShare,
   getMinBestShare,
@@ -28,6 +31,8 @@ type Props = {
   hoveredWorker: ArenaWorker | null;
   setHoveredWorker: React.Dispatch<React.SetStateAction<ArenaWorker | null>>;
   spriteSheets: LoadedSpriteSheet[];
+  isFullscreen?: boolean;
+  focusedWorkerKey?: string | null;
 };
 
 export function ArenaViewport({
@@ -37,9 +42,14 @@ export function ArenaViewport({
   hoveredWorker,
   setHoveredWorker,
   spriteSheets,
+  isFullscreen = false,
+  focusedWorkerKey = null,
 }: Props) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const bitcoinLogoRef = useRef<HTMLImageElement | null>(null);
+  const chauffagistesLogoRef = useRef<HTMLImageElement | null>(null);
 
   const dragStateRef = useRef<{
     active: boolean;
@@ -56,8 +66,38 @@ export function ArenaViewport({
   });
 
   useEffect(() => {
+    const bitcoinImg = new Image();
+    bitcoinImg.src = "/logos/bitcoin.png";
+    bitcoinLogoRef.current = bitcoinImg;
+
+    const chauffagistesImg = new Image();
+    chauffagistesImg.src = "/logos/chauffagistes.webp";
+    chauffagistesLogoRef.current = chauffagistesImg;
+
+    const redraw = () => drawScene();
+
+    bitcoinImg.onload = redraw;
+    chauffagistesImg.onload = redraw;
+  }, []);
+
+  useEffect(() => {
     drawScene();
-  }, [workers, camera, spriteSheets]);
+  }, [workers, camera, spriteSheets, isFullscreen, focusedWorkerKey]);
+
+  function getViewportSize() {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) {
+      return {
+        width: VIEWPORT_WIDTH,
+        height: VIEWPORT_HEIGHT,
+      };
+    }
+
+    return {
+      width: wrapper.clientWidth || VIEWPORT_WIDTH,
+      height: wrapper.clientHeight || VIEWPORT_HEIGHT,
+    };
+  }
 
   function screenToWorld(clientX: number, clientY: number) {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -118,8 +158,16 @@ export function ArenaViewport({
           ctx.fillStyle = "#3d2b20";
           ctx.fillRect(obstacle.x + 18, obstacle.y + 18, obstacle.width - 36, 18);
           ctx.fillStyle = "#9bb6c7";
-          for (let wy = obstacle.y + 45; wy < obstacle.y + obstacle.height - 28; wy += 42) {
-            for (let wx = obstacle.x + 22; wx < obstacle.x + obstacle.width - 32; wx += 46) {
+          for (
+            let wy = obstacle.y + 45;
+            wy < obstacle.y + obstacle.height - 28;
+            wy += 42
+          ) {
+            for (
+              let wx = obstacle.x + 22;
+              wx < obstacle.x + obstacle.width - 32;
+              wx += 46
+            ) {
               ctx.fillRect(wx, wy, 20, 20);
             }
           }
@@ -127,9 +175,27 @@ export function ArenaViewport({
 
         case "lake":
           ctx.fillStyle = obstacle.color || "#2b6f95";
-          roundRect(ctx, obstacle.x, obstacle.y, obstacle.width, obstacle.height, 28, true, false);
+          roundRect(
+            ctx,
+            obstacle.x,
+            obstacle.y,
+            obstacle.width,
+            obstacle.height,
+            28,
+            true,
+            false,
+          );
           ctx.fillStyle = "rgba(255,255,255,0.12)";
-          roundRect(ctx, obstacle.x + 18, obstacle.y + 16, obstacle.width - 36, 24, 12, true, false);
+          roundRect(
+            ctx,
+            obstacle.x + 18,
+            obstacle.y + 16,
+            obstacle.width - 36,
+            24,
+            12,
+            true,
+            false,
+          );
           break;
 
         case "tree":
@@ -171,6 +237,77 @@ export function ArenaViewport({
           ctx.fillStyle = "#6f6f6f";
           ctx.fillRect(obstacle.x + 10, obstacle.y + 46, 40, 12);
           break;
+
+        case "plaza":
+          ctx.fillStyle = obstacle.color || "#b9a27f";
+          roundRect(
+            ctx,
+            obstacle.x,
+            obstacle.y,
+            obstacle.width,
+            obstacle.height,
+            18,
+            true,
+            false,
+          );
+
+          ctx.strokeStyle = "rgba(255,255,255,0.12)";
+          ctx.lineWidth = 2;
+          roundRect(
+            ctx,
+            obstacle.x + 6,
+            obstacle.y + 6,
+            obstacle.width - 12,
+            obstacle.height - 12,
+            14,
+            false,
+            true,
+          );
+          break;
+
+        case "logo": {
+          let image: HTMLImageElement | null = null;
+
+          if (obstacle.id === "btc_logo_zone") {
+            image = bitcoinLogoRef.current;
+          } else if (obstacle.id === "chauffagistes_logo_zone") {
+            image = chauffagistesLogoRef.current;
+          }
+
+          ctx.fillStyle = obstacle.color || "#ffffff";
+          roundRect(
+            ctx,
+            obstacle.x,
+            obstacle.y,
+            obstacle.width,
+            obstacle.height,
+            12,
+            true,
+            false,
+          );
+
+          if (image && image.complete) {
+            ctx.drawImage(
+              image,
+              obstacle.x,
+              obstacle.y,
+              obstacle.width,
+              obstacle.height,
+            );
+          } else {
+            ctx.fillStyle = "#111111";
+            ctx.font = "bold 14px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(
+              obstacle.id === "btc_logo_zone" ? "₿" : "LC",
+              obstacle.x + obstacle.width / 2,
+              obstacle.y + obstacle.height / 2,
+            );
+          }
+
+          break;
+        }
       }
     }
   }
@@ -180,11 +317,13 @@ export function ArenaViewport({
     visibleWorkersCount: number,
     camX: number,
     camY: number,
+    viewportWidth: number,
+    viewportHeight: number,
   ) {
     const mapW = 180;
     const mapH = 120;
-    const x = VIEWPORT_WIDTH - mapW - 12;
-    const y = VIEWPORT_HEIGHT - mapH - 12;
+    const x = viewportWidth - mapW - 12;
+    const y = viewportHeight - mapH - 12;
 
     ctx.fillStyle = "rgba(10,10,10,0.8)";
     roundRect(ctx, x, y, mapW, mapH, 12, true, false);
@@ -197,8 +336,8 @@ export function ArenaViewport({
 
     const camRectX = x + 8 + (camX / WORLD_WIDTH) * (mapW - 16);
     const camRectY = y + 8 + (camY / WORLD_HEIGHT) * (mapH - 16);
-    const camRectW = (VIEWPORT_WIDTH / WORLD_WIDTH) * (mapW - 16);
-    const camRectH = (VIEWPORT_HEIGHT / WORLD_HEIGHT) * (mapH - 16);
+    const camRectW = (viewportWidth / WORLD_WIDTH) * (mapW - 16);
+    const camRectH = (viewportHeight / WORLD_HEIGHT) * (mapH - 16);
 
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 1;
@@ -218,8 +357,7 @@ export function ArenaViewport({
 
     ctx.imageSmoothingEnabled = false;
 
-    const width = canvas.clientWidth || VIEWPORT_WIDTH;
-    const height = canvas.clientHeight || VIEWPORT_HEIGHT;
+    const { width, height } = getViewportSize();
 
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
@@ -298,20 +436,29 @@ export function ArenaViewport({
           size,
           size,
         );
+
+        if (focusedWorkerKey === worker.uniqueKey) {
+          ctx.strokeStyle = "rgba(250, 204, 21, 0.95)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(worker.x, worker.y, size / 2 + 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
       });
     }
 
     ctx.restore();
-    drawMiniHud(ctx, workers.length, camX, camY);
+    drawMiniHud(ctx, workers.length, camX, camY, width, height);
   }
 
   const minBestShare = getMinBestShare(workers);
   const maxBestShare = getMaxBestShare(workers);
+  const viewportHeightClass = isFullscreen ? "h-[calc(100vh-110px)]" : "h-[520px]";
 
   return (
     <div
       ref={wrapperRef}
-      className="relative h-[520px] overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 select-none"
+      className={`relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 select-none ${viewportHeightClass}`}
       onMouseDown={(e) => {
         if (e.button !== CAMERA_DRAG_BUTTON) return;
 
@@ -332,14 +479,15 @@ export function ArenaViewport({
       }}
       onMouseMove={(e) => {
         const drag = dragStateRef.current;
+        const { width, height } = getViewportSize();
 
         if (drag.active) {
           const dx = e.clientX - drag.startMouseX;
           const dy = e.clientY - drag.startMouseY;
 
           setCamera({
-            x: clamp(drag.startCameraX - dx, 0, Math.max(0, WORLD_WIDTH - VIEWPORT_WIDTH)),
-            y: clamp(drag.startCameraY - dy, 0, Math.max(0, WORLD_HEIGHT - VIEWPORT_HEIGHT)),
+            x: clamp(drag.startCameraX - dx, 0, Math.max(0, WORLD_WIDTH - width)),
+            y: clamp(drag.startCameraY - dy, 0, Math.max(0, WORLD_HEIGHT - height)),
           });
 
           return;
@@ -385,6 +533,7 @@ export function ArenaViewport({
       ) : null}
 
       {workers.map((worker) => {
+        const { width, height } = getViewportSize();
         const size = getWorkerScreenSize(
           worker.bestShare,
           minBestShare,
@@ -393,12 +542,13 @@ export function ArenaViewport({
         const screenX = worker.x - camera.x;
         const screenY = worker.y - camera.y;
         const level = worker.level ?? 1;
+        const isHovered = hoveredWorker?.uniqueKey === worker.uniqueKey;
 
         if (
           screenX + size < -80 ||
           screenY + size < -80 ||
-          screenX > VIEWPORT_WIDTH + 80 ||
-          screenY > VIEWPORT_HEIGHT + 80
+          screenX > width + 80 ||
+          screenY > height + 80
         ) {
           return null;
         }
@@ -406,28 +556,35 @@ export function ArenaViewport({
         return (
           <div
             key={worker.uniqueKey}
-            className="pointer-events-none absolute"
+            className="pointer-events-none absolute transition-opacity duration-150"
             style={{
               left: screenX - 90,
-              top: screenY - size / 2 - 24,
+              top: screenY - size / 2 - 28,
               width: 180,
+              opacity: isHovered ? 1 : 0.2,
             }}
           >
             <div
-              className="flex items-center justify-center gap-2 rounded-md bg-black/70 px-2 py-1 text-[11px] font-medium text-white"
+              className="rounded-md border border-white/10 bg-black/55 px-2 py-1 text-[11px] font-medium text-white shadow-lg backdrop-blur-sm"
               title={worker.displayName}
             >
-              <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-yellow-300">
-                Lv.{level}
-              </span>
-              <span className="whitespace-nowrap">
-                {worker.displayName}
-              </span>
+            <div className="flex flex-col items-center leading-none">
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-yellow-300">
+                  Lv.{level}
+                </span>
+                <span className="truncate">{worker.displayName}</span>
+              </div>
+
+              <div className="mt-1 text-center text-[10px] text-yellow-200/90">
+                {getWalkerTitleForLevel(level)}
+              </div>
             </div>
           </div>
+        </div>
         );
       })}
-
+      
       {hoveredWorker ? <WorkerTooltip worker={hoveredWorker} /> : null}
     </div>
   );

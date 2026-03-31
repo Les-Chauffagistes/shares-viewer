@@ -1,3 +1,5 @@
+import { RoundTable } from "./RoundTable";
+
 type WorkerAddress = {
   id: string;
   rawAddress: string;
@@ -34,16 +36,6 @@ type RoundArchive = {
   workerStats: WorkerRoundStat[];
 };
 
-function roundHexToDecimal(round: string): string {
-  const parsed = parseInt(round, 16);
-  if (Number.isNaN(parsed)) return round;
-  return `${round} (${parsed.toLocaleString("fr-FR")})`;
-}
-
-function buildArchivedDisplayName(worker: WorkerRoundStat): string {
-  return `${worker.address.label}.${worker.worker}`;
-}
-
 async function getHistory(): Promise<RoundArchive[]> {
   const httpUrl = process.env.NEXT_PUBLIC_BACKEND_HTTP_URL;
 
@@ -60,6 +52,12 @@ async function getHistory(): Promise<RoundArchive[]> {
   }
 
   return res.json();
+}
+
+function roundHexToDecimal(round: string): string {
+  const parsed = parseInt(round, 16);
+  if (Number.isNaN(parsed)) return round;
+  return `${round} (${parsed.toLocaleString("fr-FR")})`;
 }
 
 export async function RecentRoundsPage() {
@@ -115,43 +113,7 @@ export async function RecentRoundsPage() {
             </div>
           </div>
 
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-neutral-400">
-                <tr className="border-b border-neutral-800">
-                  <th className="px-2 py-3">#</th>
-                  <th className="px-2 py-3">Worker</th>
-                  <th className="px-2 py-3">Best share</th>
-                  <th className="px-2 py-3">Shares</th>
-                  <th className="px-2 py-3">Streak</th>
-                  <th className="px-2 py-3">XP</th>
-                  <th className="px-2 py-3">Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                {round.workerStats.slice(0, 10).map((worker) => (
-                  <tr
-                    key={`${round.roundKey}-${worker.addressId}-${worker.workerName}`}
-                    className="border-b border-neutral-800/60"
-                  >
-                    <td className="px-2 py-3 font-semibold">{worker.rank}</td>
-                    <td className="px-2 py-3">
-                      {buildArchivedDisplayName(worker)}
-                    </td>
-                    <td className="px-2 py-3">
-                      {Math.round(worker.bestShare).toLocaleString("fr-FR")}
-                    </td>
-                    <td className="px-2 py-3">{worker.sharesCount}</td>
-                    <td className="px-2 py-3">{worker.streakAtTime}</td>
-                    <td className="px-2 py-3">
-                      {Math.round(worker.xpGained * 100) / 100}
-                    </td>
-                    <td className="px-2 py-3">{worker.levelAfter}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RoundTable roundKey={round.roundKey} workers={round.workerStats} />
         </article>
       ))}
     </section>

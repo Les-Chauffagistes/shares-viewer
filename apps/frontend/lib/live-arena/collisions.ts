@@ -1,6 +1,16 @@
 import { WORLD_HEIGHT, WORLD_PADDING, WORLD_WIDTH } from "./constants";
 import { clamp } from "./math";
-import { MapObstacle } from "./types";
+import { MapObstacle, MapObstacleKind } from "./types";
+
+function isSolidObstacle(kind: MapObstacleKind) {
+  return (
+    kind === "building" ||
+    kind === "lake" ||
+    kind === "tree" ||
+    kind === "bench" ||
+    kind === "statue"
+  );
+}
 
 export function circleRectCollision(
   cx: number,
@@ -21,7 +31,13 @@ export function collidesWithObstacle(
   radius: number,
   obstacles: MapObstacle[],
 ) {
-  return obstacles.some((obstacle) => circleRectCollision(x, y, radius, obstacle));
+  return obstacles.some((obstacle) => {
+    if (!isSolidObstacle(obstacle.kind)) {
+      return false;
+    }
+
+    return circleRectCollision(x, y, radius, obstacle);
+  });
 }
 
 export function circlesOverlap(
