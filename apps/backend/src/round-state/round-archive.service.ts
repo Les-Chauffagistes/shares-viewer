@@ -6,6 +6,16 @@ import { ArchivedRoundSnapshotForDb } from "../shares/types/archive-db.types";
 
 type TxClient = Prisma.TransactionClient;
 
+export type ArchiveRoundResult = {
+  roundArchiveId: number;
+  levelUpdates: Array<{
+    rawAddress: string;
+    addressId: string;
+    workerName: string;
+    level: number;
+  }>;
+} | null;
+
 @Injectable()
 export class RoundArchiveService {
   private readonly logger = new Logger(RoundArchiveService.name);
@@ -15,7 +25,9 @@ export class RoundArchiveService {
     private readonly levelService: LevelService,
   ) {}
 
-  async archiveRound(snapshot: ArchivedRoundSnapshotForDb) {
+  async archiveRound(
+    snapshot: ArchivedRoundSnapshotForDb,
+  ): Promise<ArchiveRoundResult> {
     if (!snapshot.workers.length) {
       this.logger.warn(`Round ${snapshot.roundKey} ignoré: aucun worker`);
       return null;
@@ -65,6 +77,13 @@ export class RoundArchiveService {
           },
         });
 
+        const levelUpdates: Array<{
+          rawAddress: string;
+          addressId: string;
+          workerName: string;
+          level: number;
+        }> = [];
+
         for (let i = 0; i < snapshot.workers.length; i += 1) {
           const worker = snapshot.workers[i];
           const rank = i + 1;
@@ -112,10 +131,15 @@ export class RoundArchiveService {
                 existingProfile?.bestShareEver ?? 0,
                 worker.bestShare,
               ),
-              totalShares: (existingProfile?.totalShares ?? 0) + worker.sharesCount,
-              roundsParticipated: (existingProfile?.roundsParticipated ?? 0) + 1,
+              totalShares:
+                (existingProfile?.totalShares ?? 0) + worker.sharesCount,
+              roundsParticipated:
+                (existingProfile?.roundsParticipated ?? 0) + 1,
               currentStreak: nextStreak,
-              bestStreak: Math.max(existingProfile?.bestStreak ?? 0, nextStreak),
+              bestStreak: Math.max(
+                existingProfile?.bestStreak ?? 0,
+                nextStreak,
+              ),
               xp: totalXpAfter,
               level: levelAfter,
             },
@@ -170,6 +194,13 @@ export class RoundArchiveService {
               levelAfter,
             },
           });
+
+          levelUpdates.push({
+            rawAddress: worker.rawAddress,
+            addressId: worker.addressId,
+            workerName: worker.workerName,
+            level: levelAfter,
+          });
         }
 
         await this.resetStreaksForAbsentWorkers(
@@ -182,7 +213,10 @@ export class RoundArchiveService {
 
         await this.keepOnlyLastFiveRounds(tx);
 
-        return roundArchive;
+        return {
+          roundArchiveId: roundArchive.id,
+          levelUpdates,
+        };
       },
       {
         timeout: 15000,

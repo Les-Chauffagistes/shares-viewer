@@ -55,6 +55,10 @@ export class RoundStateService {
     return `sv:archive_lock:${round}`;
   }
 
+  private archivedRoundKey(round: string) {
+    return `sv:archived_round:${round}`;
+  }
+
   async getCurrentRound(): Promise<string | null> {
     return this.redis.get(this.currentRoundKey());
   }
@@ -186,6 +190,61 @@ export class RoundStateService {
     };
   }
 
+  async getCurrentRoundWorkers(
+    round: string,
+  ): Promise<Array<{ rawAddress: string; workerName: string }>> {
+    const workerKeys = await this.redis.smembers(this.roundWorkersSetKey(round));
+
+    if (!workerKeys.length) {
+      return [];
+    }
+
+    return workerKeys
+      .map((compositeKey) => {
+        const separatorIndex = compositeKey.indexOf(
+          RoundStateService.WORKER_SEPARATOR,
+        );
+
+        if (separatorIndex === -1) {
+          return null;
+        }
+
+        return {
+          rawAddress: compositeKey.slice(0, separatorIndex),
+          workerName: compositeKey.slice(
+            separatorIndex + RoundStateService.WORKER_SEPARATOR.length,
+          ),
+        };
+      })
+      .filter(
+        (
+          worker,
+        ): worker is { rawAddress: string; workerName: string } => worker !== null,
+      );
+  }
+
+  async updateWorkerLevelsForRound(
+    round: string,
+    workers: Array<{ rawAddress: string; workerName: string; level: number }>,
+  ): Promise<void> {
+    if (!workers.length) {
+      return;
+    }
+
+    const multi = this.redis.multi();
+
+    for (const worker of workers) {
+      multi.hset(
+        this.roundWorkerKey(round, worker.rawAddress, worker.workerName),
+        {
+          level: String(worker.level),
+        },
+      );
+    }
+
+    await multi.exec();
+  }
+
   async getLiveRoundState(round: string): Promise<LiveWorkerState[]> {
     const workerKeys = await this.redis.smembers(this.roundWorkersSetKey(round));
 
@@ -303,14 +362,6 @@ export class RoundStateService {
     }
   }
 
-  private computeSize(bestShare: number): number {
-    return Math.max(0.8, Math.min(4, 1 + Math.log10(bestShare + 1) * 0.35));
-  }
-
-  private archivedRoundKey(round: string) {
-    return `sv:archived_round:${round}`;
-  }
-
   async isRoundArchived(round: string): Promise<boolean> {
     const value = await this.redis.get(this.archivedRoundKey(round));
     return value === "1";
@@ -318,5 +369,9 @@ export class RoundStateService {
 
   async markRoundArchived(round: string): Promise<void> {
     await this.redis.set(this.archivedRoundKey(round), "1", "EX", 86400);
+  }
+
+  private computeSize(bestShare: number): number {
+    return Math.max(0.8, Math.min(4, 1 + Math.log10(bestShare + 1) * 0.35));
   }
 }

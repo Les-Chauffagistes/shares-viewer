@@ -6,7 +6,10 @@ import {
 } from "@shares-viewer/types";
 import { RealtimeGateway } from "../realtime/realtime.gateway";
 import { RoundStateService } from "../round-state/round-state.service";
-import { RoundArchiveService } from "../round-state/round-archive.service";
+import {
+  ArchiveRoundResult,
+  RoundArchiveService,
+} from "../round-state/round-archive.service";
 import { ArchivedRoundSnapshotForDb } from "./types/archive-db.types";
 import {
   ResolvedWorkerIdentity,
@@ -58,8 +61,6 @@ export class SharesService {
       return;
     }
 
-    const updatedPublicWorker = await this.toPublicWorker(result.updatedWorker);
-
     if (result.changedRound && result.previousRound) {
       const alreadyArchived = await this.roundStateService.isRoundArchived(
         result.previousRound,
@@ -85,7 +86,48 @@ export class SharesService {
             const archiveSnapshot =
               await this.buildArchivedSnapshotForDb(snapshot);
 
-            await this.roundArchiveService.archiveRound(archiveSnapshot);
+            const archiveResult: ArchiveRoundResult =
+              await this.roundArchiveService.archiveRound(archiveSnapshot);
+
+            if (archiveResult) {
+              const currentRoundWorkers =
+                await this.roundStateService.getCurrentRoundWorkers(
+                  result.currentRound,
+                );
+
+              if (currentRoundWorkers.length) {
+                const resolvedCurrentRoundWorkers = await Promise.all(
+                  currentRoundWorkers.map(async (worker) => {
+                    const identity = await this.workerIdentityService.resolve(
+                      worker.rawAddress,
+                      worker.workerName,
+                    );
+
+                    return {
+                      rawAddress: worker.rawAddress,
+                      workerName: worker.workerName,
+                      level: identity.level ?? 1,
+                    };
+                  }),
+                );
+
+                await this.roundStateService.updateWorkerLevelsForRound(
+                  result.currentRound,
+                  resolvedCurrentRoundWorkers,
+                );
+
+                const updatedWorkerLevel = resolvedCurrentRoundWorkers.find(
+                  (worker) =>
+                    worker.rawAddress === result.updatedWorker?.address &&
+                    worker.workerName === result.updatedWorker?.workerName,
+                );
+
+                if (updatedWorkerLevel && result.updatedWorker) {
+                  result.updatedWorker.level = updatedWorkerLevel.level;
+                }
+              }
+            }
+
             await this.roundStateService.markRoundArchived(result.previousRound);
           }
 
@@ -102,6 +144,8 @@ export class SharesService {
         }
       }
     }
+
+    const updatedPublicWorker = await this.toPublicWorker(result.updatedWorker);
 
     this.realtimeGateway.emitWorkerShareUpdated({
       type: "worker_share_updated",
@@ -181,7 +225,7 @@ export class SharesService {
       workerName: identity.workerLabel,
       displayName: identity.displayName,
       uniqueKey: `${identity.addressId}::${identity.rawWorkerName}`,
-      level: worker.level ?? identity.level ?? 1,
+      level: identity.level ?? worker.level ?? 1,
     };
   }
 
@@ -204,7 +248,7 @@ export class SharesService {
           workerName: identity.workerLabel,
           displayName: identity.displayName,
           uniqueKey: `${identity.addressId}::${identity.rawWorkerName}`,
-          level: worker.level ?? identity.level ?? 1,
+          level: identity.level ?? worker.level ?? 1,
         };
       })
       .sort((a, b) => b.bestShare - a.bestShare);
