@@ -1,27 +1,71 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16
-    container_name: shares-viewer-postgres
+    container_name: shares-viewer2-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: shares_viewer
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shares_viewer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
-    container_name: shares-viewer-redis
+    container_name: shares-viewer2-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: shares-viewer2-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./apps/backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/shares_viewer?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "127.0.0.1:3006:3006"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: shares-viewer2-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - ./apps/frontend/.env.local
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_BACKEND_HTTP_URL: http://localhost:3006
+      NEXT_PUBLIC_BACKEND_WS_URL: http://localhost:3006
+    ports:
+      - "127.0.0.1:3007:3000"
 
 volumes:
   postgres_data:
