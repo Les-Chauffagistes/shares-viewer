@@ -123,7 +123,7 @@ export function LiveArenaCanvas() {
 
     async function loadInitialState() {
       try {
-        const res = await fetch(`${httpUrl}/live`, {
+        const res = await fetch(`${httpUrl}/api/live`, {
           cache: "no-store",
         });
 

@@ -1,6 +1,9 @@
 import { TopNav } from "@/components/top-nav";
 import { RecentRoundsPage } from "@/components/recent-rounds-page";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function HistoryPage() {
   return (
     <main className="min-h-screen bg-neutral-950 text-white">

@@ -1,28 +1,5 @@
-import { RoundTable } from "./RoundTable";
-
-type WorkerAddress = {
-  id: string;
-  rawAddress: string;
-  isPublic: boolean;
-  label: string;
-};
-
-type WorkerRoundStat = {
-  id: number;
-  roundKey: string;
-  workerName: string;
-  worker: string;
-  addressId: string;
-  bestShare: number;
-  sharesCount: number;
-  rank: number;
-  participated: boolean;
-  streakAtTime: number;
-  xpGained: number;
-  totalXpAfter: number;
-  levelAfter: number;
-  address: WorkerAddress;
-};
+import { unstable_noStore as noStore } from "next/cache";
+import { RoundTable, type WorkerRoundStat } from "./RoundTable";
 
 type RoundArchive = {
   id: number;
@@ -37,21 +14,42 @@ type RoundArchive = {
 };
 
 async function getHistory(): Promise<RoundArchive[]> {
-  const httpUrl = process.env.NEXT_PUBLIC_BACKEND_HTTP_URL;
+  noStore();
 
-  if (!httpUrl) {
+  const baseUrl = process.env.BACKEND_HTTP_URL;
+
+  if (!baseUrl) {
+    console.error("[RecentRoundsPage] BACKEND_HTTP_URL manquante");
     return [];
   }
 
-  const res = await fetch(`${httpUrl}/history`, {
-    cache: "no-store",
-  });
+  try {
+    const res = await fetch(`${baseUrl}/api/history`, {
+      cache: "no-store",
+    });
 
-  if (!res.ok) {
+    if (!res.ok) {
+      console.error(
+        "[RecentRoundsPage] Erreur API /api/history:",
+        res.status,
+        await res.text(),
+      );
+      return [];
+    }
+
+    const text = await res.text();
+    const data = JSON.parse(text);
+
+    if (!Array.isArray(data)) {
+      console.error("[RecentRoundsPage] /api/history n'a pas renvoyé un tableau");
+      return [];
+    }
+
+    return data as RoundArchive[];
+  } catch (error) {
+    console.error("[RecentRoundsPage] fetch /api/history failed", error);
     return [];
   }
-
-  return res.json();
 }
 
 function roundHexToDecimal(round: string): string {
@@ -61,6 +59,8 @@ function roundHexToDecimal(round: string): string {
 }
 
 export async function RecentRoundsPage() {
+  noStore();
+
   const rounds = await getHistory();
 
   if (rounds.length === 0) {

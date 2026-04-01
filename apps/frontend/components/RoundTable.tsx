@@ -2,19 +2,12 @@
 
 import { useMemo, useState } from "react";
 
-type WorkerAddress = {
-  id: string;
-  rawAddress: string;
-  isPublic: boolean;
-  label: string;
-};
-
-type WorkerRoundStat = {
+export type WorkerRoundStat = {
   id: number;
   roundKey: string;
-  workerName: string;
   worker: string;
-  addressId: string;
+  address: string;
+  isPublic: boolean;
   bestShare: number;
   sharesCount: number;
   rank: number;
@@ -23,7 +16,7 @@ type WorkerRoundStat = {
   xpGained: number;
   totalXpAfter: number;
   levelAfter: number;
-  address: WorkerAddress;
+  createdAt: string;
 };
 
 type RoundTableProps = {
@@ -32,7 +25,7 @@ type RoundTableProps = {
 };
 
 function buildArchivedDisplayName(worker: WorkerRoundStat): string {
-  return `${worker.address.label}.${worker.worker}`;
+  return `${worker.address}.${worker.worker}`;
 }
 
 export function RoundTable({ roundKey, workers }: RoundTableProps) {
@@ -60,7 +53,7 @@ export function RoundTable({ roundKey, workers }: RoundTableProps) {
           <tbody>
             {displayedWorkers.map((worker) => (
               <tr
-                key={`${roundKey}-${worker.addressId}-${worker.workerName}`}
+                key={`${roundKey}-${worker.id}`}
                 className="border-b border-neutral-800/60"
               >
                 <td className="px-2 py-3 font-semibold">{worker.rank}</td>
