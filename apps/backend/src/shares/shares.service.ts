@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { createHmac } from "node:crypto";
 import {
   ArchivedRoundSnapshot,
   LiveWorkerState,
@@ -26,6 +27,8 @@ type PublicLiveWorkerState = Omit<LiveWorkerState, "address" | "workerName"> & {
 @Injectable()
 export class SharesService {
   private readonly logger = new Logger(SharesService.name);
+  private readonly publicKeySecret =
+    process.env.PUBLIC_WORKER_KEY_SECRET || "dev-secret-change-me";
 
   private liveStateBroadcastTimer: NodeJS.Timeout | null = null;
   private pendingLiveStateRound: string | null = null;
@@ -211,6 +214,13 @@ export class SharesService {
     }, this.LIVE_STATE_BROADCAST_DEBOUNCE_MS);
   }
 
+  private buildPublicUniqueKey(identity: ResolvedWorkerIdentity): string {
+    return createHmac("sha256", this.publicKeySecret)
+      .update(`${identity.addressId}::${identity.rawWorkerName}`)
+      .digest("hex")
+      .slice(0, 24);
+  }
+
   private async toPublicWorker(
     worker: LiveWorkerState,
   ): Promise<PublicLiveWorkerState> {
@@ -224,7 +234,7 @@ export class SharesService {
       address: identity.addressLabel,
       workerName: identity.workerLabel,
       displayName: identity.displayName,
-      uniqueKey: `${identity.addressId}::${identity.rawWorkerName}`,
+      uniqueKey: this.buildPublicUniqueKey(identity),
       level: identity.level ?? worker.level ?? 1,
     };
   }
@@ -247,7 +257,7 @@ export class SharesService {
           address: identity.addressLabel,
           workerName: identity.workerLabel,
           displayName: identity.displayName,
-          uniqueKey: `${identity.addressId}::${identity.rawWorkerName}`,
+          uniqueKey: this.buildPublicUniqueKey(identity),
           level: identity.level ?? worker.level ?? 1,
         };
       })

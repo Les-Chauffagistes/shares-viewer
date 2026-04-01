@@ -9,24 +9,24 @@ async function bootstrap() {
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://ton-frontend.com",
+      "http://localhost:3007",
     ],
     credentials: true,
   });
 
-  setInterval(() => {
-    const memory = process.memoryUsage();
-    const heapStats = v8.getHeapStatistics();
+  // setInterval(() => {
+  //   const memory = process.memoryUsage();
+  //   const heapStats = v8.getHeapStatistics();
 
-    console.log("[Memory]", {
-      rss: `${Math.round(memory.rss / 1024 / 1024)} MB`,
-      heapTotal: `${Math.round(memory.heapTotal / 1024 / 1024)} MB`,
-      heapUsed: `${Math.round(memory.heapUsed / 1024 / 1024)} MB`,
-      external: `${Math.round(memory.external / 1024 / 1024)} MB`,
-      arrayBuffers: `${Math.round(memory.arrayBuffers / 1024 / 1024)} MB`,
-      heapLimit: `${Math.round(heapStats.heap_size_limit / 1024 / 1024)} MB`,
-    });
-  }, 10000);
+  //   console.log("[Memory]", {
+  //     rss: `${Math.round(memory.rss / 1024 / 1024)} MB`,
+  //     heapTotal: `${Math.round(memory.heapTotal / 1024 / 1024)} MB`,
+  //     heapUsed: `${Math.round(memory.heapUsed / 1024 / 1024)} MB`,
+  //     external: `${Math.round(memory.external / 1024 / 1024)} MB`,
+  //     arrayBuffers: `${Math.round(memory.arrayBuffers / 1024 / 1024)} MB`,
+  //     heapLimit: `${Math.round(heapStats.heap_size_limit / 1024 / 1024)} MB`,
+  //   });
+  // }, 10000);
 
   await app.listen(process.env.PORT ? Number(process.env.PORT) : 3001);
 }

@@ -1,14 +1,8 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  NotFoundException,
-  Param,
-} from "@nestjs/common";
+import { Controller, Get } from "@nestjs/common";
 import { SharesService } from "./shares/shares.service";
 import { PrismaService } from "./database/prisma.service";
 
-@Controller()
+@Controller("/api")
 export class AppController {
   constructor(
     private readonly sharesService: SharesService,
@@ -22,84 +16,167 @@ export class AppController {
 
   @Get("/live")
   async live() {
+    console.log("/api/live appelé");
     return this.sharesService.getLiveState();
   }
 
   @Get("/history")
   async history() {
-    return this.prisma.roundArchive.findMany({
-      orderBy: { endedAt: "desc" },
-      take: 5,
-      include: {
-        workerStats: {
-          orderBy: { rank: "asc" },
-          include: {
-            address: true,
+    console.log("➡️ /api/history appelé");
+
+    try {
+      console.log("🔍 Lancement requête Prisma history...");
+
+      const rounds = await this.prisma.roundArchive.findMany({
+        orderBy: { endedAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          roundKey: true,
+          startedAt: true,
+          endedAt: true,
+          workersCount: true,
+          sharesCount: true,
+          bestShare: true,
+          createdAt: true,
+          workerStats: {
+            orderBy: { rank: "asc" },
+            select: {
+              id: true,
+              roundKey: true,
+              worker: true,
+              bestShare: true,
+              sharesCount: true,
+              rank: true,
+              participated: true,
+              streakAtTime: true,
+              xpGained: true,
+              totalXpAfter: true,
+              levelAfter: true,
+              createdAt: true,
+              address: {
+                select: {
+                  id: true,
+                  label: true,
+                  isPublic: true,
+                },
+              },
+            },
           },
         },
-      },
-    });
+      });
+
+      const result = rounds.map((round) => ({
+        id: round.id,
+        roundKey: round.roundKey,
+        startedAt: round.startedAt,
+        endedAt: round.endedAt,
+        workersCount: round.workersCount,
+        sharesCount: round.sharesCount,
+        bestShare: round.bestShare,
+        createdAt: round.createdAt,
+        workerStats: round.workerStats.map((stat) => ({
+          id: stat.id,
+          roundKey: stat.roundKey,
+          worker: stat.worker,
+          address: stat.address.label,
+          isPublic: stat.address.isPublic,
+          bestShare: stat.bestShare,
+          sharesCount: stat.sharesCount,
+          rank: stat.rank,
+          participated: stat.participated,
+          streakAtTime: stat.streakAtTime,
+          xpGained: stat.xpGained,
+          totalXpAfter: stat.totalXpAfter,
+          levelAfter: stat.levelAfter,
+          createdAt: stat.createdAt,
+        })),
+      }));
+
+      console.log("✅ Résultat history récupéré");
+      console.log("📊 Nombre de rounds :", result.length);
+
+      if (result.length > 0) {
+        console.log("🧪 Premier round history :", JSON.stringify(result[0], null, 2));
+      }
+
+      return result;
+    } catch (error) {
+      console.log("❌ ERREUR /api/history");
+      console.log(error);
+
+      if (error instanceof Error) {
+        console.log("STACK :", error.stack);
+      }
+
+      throw error;
+    }
   }
 
-  @Get("/workers/:rawWorkerName")
-  async worker(@Param("rawWorkerName") rawWorkerName: string) {
-    const parsed = this.parseWorkerIdentifier(rawWorkerName);
+  @Get("/workers")
+  async workers() {
+    console.log("➡️ /api/workers appelé");
 
-    if (!parsed) {
-      throw new BadRequestException(
-        "Format attendu: address.worker",
-      );
-    }
+    try {
+      console.log("🔍 Lancement requête Prisma workers...");
 
-    const addressId = this.toAddressId(parsed.address);
-    const workerName = parsed.workerName;
-
-    const worker = await this.prisma.workerProfile.findUnique({
-      where: {
-        addressId_workerName: {
-          addressId,
-          workerName,
+      const workers = await this.prisma.workerProfile.findMany({
+        orderBy: [{ xp: "desc" }, { level: "desc" }, { bestShareEver: "desc" }],
+        select: {
+          id: true,
+          worker: true,
+          bestShareEver: true,
+          totalShares: true,
+          roundsParticipated: true,
+          currentStreak: true,
+          bestStreak: true,
+          xp: true,
+          level: true,
+          createdAt: true,
+          updatedAt: true,
+          address: {
+            select: {
+              id: true,
+              label: true,
+              isPublic: true,
+            },
+          },
         },
-      },
-      include: {
-        address: true,
-      },
-    });
+      });
 
-    if (!worker) {
-      throw new NotFoundException("Worker introuvable");
+      const result = workers.map((worker) => ({
+        id: worker.id,
+        address: worker.address.label,
+        isPublic: worker.address.isPublic,
+        worker: worker.worker,
+        bestShareEver: worker.bestShareEver,
+        totalShares: worker.totalShares,
+        roundsParticipated: worker.roundsParticipated,
+        currentStreak: worker.currentStreak,
+        bestStreak: worker.bestStreak,
+        xp: worker.xp,
+        level: worker.level,
+        createdAt: worker.createdAt,
+        updatedAt: worker.updatedAt,
+      }));
+
+      console.log("✅ Résultat workers récupéré");
+      console.log("📊 Nombre de workers :", result.length);
+
+      if (result.length > 0) {
+        console.log("🧪 Premier worker :", JSON.stringify(result[0], null, 2));
+      }
+
+      return result;
+    } catch (error) {
+      console.log("❌ ERREUR /api/workers");
+      console.log(error);
+
+      if (error instanceof Error) {
+        console.log("STACK :", error.stack);
+      }
+
+      throw error;
     }
-
-    return worker;
-  }
-
-  private parseWorkerIdentifier(
-    rawWorkerName: string,
-  ): { address: string; workerName: string } | null {
-    const separatorIndex = rawWorkerName.lastIndexOf(".");
-
-    if (separatorIndex <= 0 || separatorIndex === rawWorkerName.length - 1) {
-      return null;
-    }
-
-    const address = rawWorkerName.slice(0, separatorIndex).trim();
-    const workerName = rawWorkerName.slice(separatorIndex + 1).trim();
-
-    if (!address || !workerName) {
-      return null;
-    }
-
-    return { address, workerName };
-  }
-
-  private toAddressId(address: string): string {
-    if (
-      address ===
-      "bc1qqp9zq4an6nyzhcspz2xfmkcf8rj0p6w94a5gyeu2a7rghxjhnqqsvymz5m"
-    ) {
-      return "chauff_pool";
-    }
-
-    return address;
   }
 }
