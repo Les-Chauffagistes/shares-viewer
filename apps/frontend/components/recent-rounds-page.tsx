@@ -85,7 +85,9 @@ export async function RecentRoundsPage() {
                 {roundHexToDecimal(round.roundKey)}
               </h2>
               <p className="mt-1 text-sm text-neutral-500">
-                Fin : {new Date(round.endedAt).toLocaleString("fr-FR")}
+                Fin : {new Date(round.endedAt).toLocaleString("fr-FR", {
+                  timeZone: "Europe/Paris",
+                })}
               </p>
             </div>
 
