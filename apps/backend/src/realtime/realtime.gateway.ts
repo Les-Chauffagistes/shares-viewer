@@ -12,7 +12,7 @@ import { Server, Socket } from "socket.io";
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://ton-frontend.com",
+      "https://shares-viewer.chauffagistes-btc.fr",
     ],
     credentials: true,
   },

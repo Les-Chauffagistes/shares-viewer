@@ -10,6 +10,7 @@ async function bootstrap() {
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3007",
+      "https://shares-viewer.chauffagistes-btc.fr",
     ],
     credentials: true,
   });
