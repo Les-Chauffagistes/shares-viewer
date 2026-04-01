@@ -4,13 +4,13 @@ services:
     container_name: shares-viewer2-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: shares_viewer
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d shares_viewer"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,16 +38,18 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    env_file:
-      - ./apps/backend/.env
     environment:
       NODE_ENV: production
-      PORT: 3006
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/shares_viewer?schema=public
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      PORT: ${BACKEND_PORT}
+      SHARES_WS_URL: ${SHARES_WS_URL}
+      SHARES_WS_TOKEN: ${SHARES_WS_TOKEN}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DB: ${REDIS_DB}
+      PUBLIC_WORKER_KEY_SECRET: ${PUBLIC_WORKER_KEY_SECRET}
     ports:
-      - "127.0.0.1:3006:3006"
+      - "127.0.0.1:${BACKEND_PORT}:${BACKEND_PORT}"
 
   frontend:
     build:
@@ -55,17 +57,16 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: shares-viewer2-frontend
     restart: unless-stopped
-    depends_on:
-      - backend
-    env_file:
-      - ./apps/frontend/.env.local
+    # depends_on:
+    #   - backend
     environment:
       NODE_ENV: production
-      PORT: 3000
-      NEXT_PUBLIC_BACKEND_HTTP_URL: http://localhost:3006
-      NEXT_PUBLIC_BACKEND_WS_URL: http://localhost:3006
+      PORT: ${FRONTEND_PORT}
+      NEXT_PUBLIC_BACKEND_HTTP_URL: ${NEXT_PUBLIC_BACKEND_HTTP_URL}
+      NEXT_PUBLIC_BACKEND_WS_URL: ${NEXT_PUBLIC_BACKEND_WS_URL}
+      BACKEND_HTTP_URL: ${BACKEND_HTTP_URL}
     ports:
-      - "127.0.0.1:3007:3000"
+      - "127.0.0.1:${FRONTEND_EXPOSE_PORT}:${FRONTEND_PORT}"
 
 volumes:
   postgres_data:
