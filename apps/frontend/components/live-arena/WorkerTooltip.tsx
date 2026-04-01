@@ -3,6 +3,7 @@
 import { ArenaWorker } from "@/lib/live-arena/types";
 import { getWalkerTitleForLevel } from "@/lib/live-arena/sprites";
 import { extractMinerName } from "./helpers";
+import { formatHash } from "@/components/utils/format";
 
 type Props = {
   worker: ArenaWorker;
@@ -28,7 +29,7 @@ export function WorkerTooltip({ worker }: Props) {
         <p>
           Best share{" "}
           <span className="font-semibold text-white">
-            {Math.round(worker.bestShare).toLocaleString("fr-FR")}
+            {formatHash(worker.bestShare)}
           </span>
         </p>
         <p>

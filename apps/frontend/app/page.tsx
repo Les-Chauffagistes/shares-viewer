@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { LiveArenaCanvas } from "@/components/live-arena/LiveArenaCanvas";
 import { TopNav } from "@/components/top-nav";
 
@@ -7,14 +8,37 @@ export default function HomePage() {
       <TopNav />
 
       <div className="mx-auto max-w-7xl space-y-10 p-8">
-        <header className="space-y-2">
-          <h1 className="text-4xl font-bold">Bitcoin Workers Life</h1>
+        <header className="space-y-3">
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl font-bold">Bitcoin Workers Life</h1>
+          </div>
+
           <p className="text-neutral-400">
             Visualisation en direct des mineurs de la pool chauffagistes-pool.fr
           </p>
         </header>
 
         <LiveArenaCanvas />
+
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+          <div className="max-w-4xl space-y-4">
+            <h2 className="text-2xl font-bold">Comment jouer ?</h2>
+
+            <p className="leading-7 text-neutral-300">
+              Connectez-vous sur la pool des Chauffagistes via{" "}
+              <a
+                href="https://chauffagistes-btc.fr/pool"
+                target="_blank"
+                rel="noreferrer"
+                className="text-orange-400 hover:underline"
+              >
+                chauffagistes-btc.fr/pool
+              </a>{" "}
+              avec votre mineur, puis repérez votre personnage sur la carte et
+              suivez sa progression en temps réel.
+            </p>
+          </div>
+        </section>
 
         <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
           <div className="max-w-4xl space-y-4">
@@ -44,7 +68,7 @@ export default function HomePage() {
 
             <p className="leading-7 text-neutral-300">
               Le projet est actuellement en version{" "}
-              <span className="text-yellow-400 font-medium">pré-alpha</span>.
+              <span className="font-medium text-yellow-400">pré-alpha</span>.
               Certaines données, comme les niveaux ou la progression des workers,
               peuvent être réinitialisées à tout moment.
             </p>
@@ -59,7 +83,7 @@ export default function HomePage() {
               >
                 shares-viewer
               </a>{" "}
-              Développé par{" "}
+              · Développé par{" "}
               <a
                 href="https://github.com/itrider-gh"
                 target="_blank"
@@ -91,8 +115,8 @@ export default function HomePage() {
             </p>
 
             <p className="leading-7 text-neutral-300">
-              Les crédits détaillés des auteurs et des licences sont disponibles dans le
-              fichier{" "}
+              Les crédits détaillés des auteurs et des licences sont disponibles
+              dans le fichier{" "}
               <a
                 href="/CREDITS.csv"
                 target="_blank"

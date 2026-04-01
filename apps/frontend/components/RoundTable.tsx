@@ -1,5 +1,6 @@
 "use client";
 
+import { formatHash } from "@/components/utils/format";
 import { useMemo, useState } from "react";
 
 export type WorkerRoundStat = {
@@ -59,7 +60,7 @@ export function RoundTable({ roundKey, workers }: RoundTableProps) {
                 <td className="px-2 py-3 font-semibold">{worker.rank}</td>
                 <td className="px-2 py-3">{buildArchivedDisplayName(worker)}</td>
                 <td className="px-2 py-3">
-                  {Math.round(worker.bestShare).toLocaleString("fr-FR")}
+                  {formatHash(worker.bestShare)}
                 </td>
                 <td className="px-2 py-3">{worker.sharesCount}</td>
                 <td className="px-2 py-3">{worker.streakAtTime}</td>

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArenaWorker } from "@/lib/live-arena/types";
+import { formatHash } from "@/components/utils/format";
 
 type Props = {
   workers: ArenaWorker[];
@@ -37,7 +38,7 @@ export function Leaderboard({ workers }: Props) {
                 <div className="text-right">
                   <p className="text-xs text-neutral-500">Best</p>
                   <p className="font-semibold text-white">
-                    {Math.round(worker.bestShare).toLocaleString("fr-FR")}
+                    {formatHash(worker.bestShare)}
                   </p>
                 </div>
               </div>
