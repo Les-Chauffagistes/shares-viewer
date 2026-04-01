@@ -11,12 +11,12 @@ datasource db {
 model RoundArchive {
   id           Int               @id @default(autoincrement())
   roundKey     String            @unique
-  startedAt    DateTime?
-  endedAt      DateTime
+  startedAt    DateTime?         @db.Timestamptz(3)
+  endedAt      DateTime          @db.Timestamptz(3)
   workersCount Int
   sharesCount  Int
   bestShare    Float
-  createdAt    DateTime          @default(now())
+  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
 
   workerStats  WorkerRoundStat[]
 
@@ -38,7 +38,7 @@ model WorkerRoundStat {
   xpGained       Float
   totalXpAfter   Float
   levelAfter     Int
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
 
   roundArchive   RoundArchive  @relation(fields: [roundArchiveId], references: [id], onDelete: Cascade)
   address        WorkerAddress @relation(fields: [addressId], references: [id], onDelete: Restrict)
@@ -63,8 +63,8 @@ model WorkerProfile {
   bestStreak         Int           @default(0)
   xp                 Float         @default(0)
   level              Int           @default(1)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt          DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime      @updatedAt @db.Timestamptz(3)
 
   address            WorkerAddress @relation(fields: [addressId], references: [id], onDelete: Restrict)
 
@@ -81,8 +81,8 @@ model WorkerAddress {
   rawAddress       String   @unique
   isPublic         Boolean  @default(false)
   label            String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
 
   workerProfiles   WorkerProfile[]
   workerRoundStats WorkerRoundStat[]
