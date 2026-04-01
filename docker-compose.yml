@@ -55,6 +55,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_BACKEND_HTTP_URL: ${NEXT_PUBLIC_BACKEND_HTTP_URL}
+        NEXT_PUBLIC_BACKEND_WS_URL: ${NEXT_PUBLIC_BACKEND_WS_URL}
     container_name: shares-viewer2-frontend
     restart: unless-stopped
     # depends_on:
