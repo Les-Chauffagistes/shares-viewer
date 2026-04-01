@@ -39,7 +39,7 @@ export function RoundTable({ roundKey, workers }: RoundTableProps) {
   return (
     <div className="mt-4">
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <table className="min-w-[760px] w-full text-xs sm:text-sm">
           <thead className="text-left text-neutral-400">
             <tr className="border-b border-neutral-800">
               <th className="px-2 py-3">#</th>
@@ -51,6 +51,7 @@ export function RoundTable({ roundKey, workers }: RoundTableProps) {
               <th className="px-2 py-3">Level</th>
             </tr>
           </thead>
+
           <tbody>
             {displayedWorkers.map((worker) => (
               <tr
@@ -58,10 +59,14 @@ export function RoundTable({ roundKey, workers }: RoundTableProps) {
                 className="border-b border-neutral-800/60"
               >
                 <td className="px-2 py-3 font-semibold">{worker.rank}</td>
-                <td className="px-2 py-3">{buildArchivedDisplayName(worker)}</td>
+
                 <td className="px-2 py-3">
-                  {formatHash(worker.bestShare)}
+                  <div className="max-w-[240px] truncate sm:max-w-none">
+                    {buildArchivedDisplayName(worker)}
+                  </div>
                 </td>
+
+                <td className="px-2 py-3">{formatHash(worker.bestShare)}</td>
                 <td className="px-2 py-3">{worker.sharesCount}</td>
                 <td className="px-2 py-3">{worker.streakAtTime}</td>
                 <td className="px-2 py-3">
@@ -74,7 +79,7 @@ export function RoundTable({ roundKey, workers }: RoundTableProps) {
         </table>
       </div>
 
-      {workers.length > 10 && (
+      {workers.length > 10 ? (
         <div className="mt-4 flex justify-center">
           <button
             type="button"
@@ -86,7 +91,7 @@ export function RoundTable({ roundKey, workers }: RoundTableProps) {
               : `Afficher tous les workers (${workers.length})`}
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

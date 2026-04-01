@@ -1,5 +1,8 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { WorkerLeaderboardTable, type WorkerProfile } from "@/components/WorkerLeaderboardTable";
+import {
+  WorkerLeaderboardTable,
+  type WorkerProfile,
+} from "@/components/WorkerLeaderboardTable";
 import { TopNav } from "@/components/top-nav";
 import { formatHash } from "@/components/utils/format";
 
@@ -62,34 +65,36 @@ export default async function WorkersPage() {
     <main className="min-h-screen bg-neutral-950 text-white">
       <TopNav />
 
-      <div className="mx-auto max-w-7xl space-y-10 p-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-4 sm:space-y-8 sm:px-6 sm:py-6 lg:space-y-10 lg:px-8">
         <header className="space-y-2">
-          <h1 className="text-4xl font-bold">Leaderboard global</h1>
-          <p className="text-neutral-400">
-            Classement global des workers selon leur XP, leur niveau et leur meilleure
-            share historique.
+          <h1 className="text-2xl font-bold sm:text-3xl lg:text-4xl">
+            Leaderboard global
+          </h1>
+          <p className="text-sm text-neutral-400 sm:text-base">
+            Classement global des workers selon leur XP, leur niveau et leur
+            meilleure share historique.
           </p>
         </header>
 
         {workers.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-neutral-400">
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-400 sm:p-6 sm:text-base">
             Aucun worker trouvé pour le moment.
           </div>
         ) : (
-          <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-            <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+          <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5">
+            <div className="grid grid-cols-2 gap-2 text-xs sm:gap-3 sm:text-sm md:grid-cols-4">
               <div className="rounded-xl bg-neutral-950 px-3 py-2">
                 <p className="text-neutral-400">Workers</p>
                 <p className="font-semibold">{totalWorkers}</p>
               </div>
+
               <div className="rounded-xl bg-neutral-950 px-3 py-2">
                 <p className="text-neutral-400">Shares totales</p>
-                <p className="font-semibold">{totalShares.toLocaleString("fr-FR")}</p>
+                <p className="font-semibold">
+                  {totalShares.toLocaleString("fr-FR")}
+                </p>
               </div>
-              <div className="rounded-xl bg-neutral-950 px-3 py-2">
-                <p className="text-neutral-400">Rounds cumulés</p>
-                <p className="font-semibold">{totalRounds.toLocaleString("fr-FR")}</p>
-              </div>
+
               <div className="rounded-xl bg-neutral-950 px-3 py-2">
                 <p className="text-neutral-400">Best share ever</p>
                 <p className="font-semibold">{formatHash(bestShareEver)}</p>

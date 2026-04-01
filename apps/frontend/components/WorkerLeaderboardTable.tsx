@@ -39,7 +39,7 @@ export function WorkerLeaderboardTable({
   return (
     <div className="mt-4">
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <table className="w-full min-w-[1100px] text-xs sm:text-sm">
           <thead className="text-left text-neutral-400">
             <tr className="border-b border-neutral-800">
               <th className="px-2 py-3">#</th>
@@ -54,29 +54,39 @@ export function WorkerLeaderboardTable({
               <th className="px-2 py-3">Dernière mise à jour</th>
             </tr>
           </thead>
+
           <tbody>
             {displayedWorkers.map((worker, index) => (
-              <tr
-                key={worker.id}
-                className="border-b border-neutral-800/60"
-              >
+              <tr key={worker.id} className="border-b border-neutral-800/60">
                 <td className="px-2 py-3 font-semibold">{index + 1}</td>
-                <td className="px-2 py-3">{buildDisplayName(worker)}</td>
+
+                <td className="px-2 py-3">
+                  <div className="max-w-[240px] truncate sm:max-w-none">
+                    {buildDisplayName(worker)}
+                  </div>
+                </td>
+
                 <td className="px-2 py-3">{worker.level}</td>
+
                 <td className="px-2 py-3">
                   {(Math.round(worker.xp * 100) / 100).toLocaleString("fr-FR")}
                 </td>
+
                 <td className="px-2 py-3">
                   {formatHash(worker.bestShareEver)}
                 </td>
+
                 <td className="px-2 py-3">
                   {worker.totalShares.toLocaleString("fr-FR")}
                 </td>
+
                 <td className="px-2 py-3">
                   {worker.roundsParticipated.toLocaleString("fr-FR")}
                 </td>
+
                 <td className="px-2 py-3">{worker.currentStreak}</td>
                 <td className="px-2 py-3">{worker.bestStreak}</td>
+
                 <td className="px-2 py-3 text-neutral-400">
                   {new Date(worker.updatedAt).toLocaleString("fr-FR")}
                 </td>
@@ -86,7 +96,7 @@ export function WorkerLeaderboardTable({
         </table>
       </div>
 
-      {workers.length > 25 && (
+      {workers.length > 25 ? (
         <div className="mt-4 flex justify-center">
           <button
             type="button"
@@ -98,7 +108,7 @@ export function WorkerLeaderboardTable({
               : `Afficher tous les workers (${workers.length})`}
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

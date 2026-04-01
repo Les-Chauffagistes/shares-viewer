@@ -65,47 +65,51 @@ export async function RecentRoundsPage() {
 
   if (rounds.length === 0) {
     return (
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-neutral-400">
+      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-400 sm:p-6 sm:text-base">
         Aucun bloc archivé pour le moment.
       </div>
     );
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 sm:space-y-5">
       {rounds.map((round) => (
         <article
           key={round.id}
-          className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4"
+          className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5"
         >
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-sm text-neutral-400">Bloc</p>
-              <h2 className="text-2xl font-bold">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs text-neutral-400 sm:text-sm">Bloc</p>
+              <h2 className="break-words text-xl font-bold sm:text-2xl">
                 {roundHexToDecimal(round.roundKey)}
               </h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Fin : {new Date(round.endedAt).toLocaleString("fr-FR", {
+              <p className="mt-1 text-xs text-neutral-500 sm:text-sm">
+                Fin :{" "}
+                {new Date(round.endedAt).toLocaleString("fr-FR", {
                   timeZone: "Europe/Paris",
                 })}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 text-xs sm:gap-3 sm:text-sm md:grid-cols-4">
               <div className="rounded-xl bg-neutral-950 px-3 py-2">
                 <p className="text-neutral-400">Workers</p>
                 <p className="font-semibold">{round.workersCount}</p>
               </div>
+
               <div className="rounded-xl bg-neutral-950 px-3 py-2">
                 <p className="text-neutral-400">Shares</p>
                 <p className="font-semibold">{round.sharesCount}</p>
               </div>
+
               <div className="rounded-xl bg-neutral-950 px-3 py-2">
                 <p className="text-neutral-400">Best</p>
                 <p className="font-semibold">
                   {Math.round(round.bestShare).toLocaleString("fr-FR")}
                 </p>
               </div>
+
               <div className="rounded-xl bg-neutral-950 px-3 py-2">
                 <p className="text-neutral-400">Top affiché</p>
                 <p className="font-semibold">

@@ -43,9 +43,11 @@ export function LiveArenaCanvas() {
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [spriteSheets, setSpriteSheets] = useState<LoadedSpriteSheet[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [focusedWorkerKey, setFocusedWorkerKey] = useState<string | null>(null);
+  const [selectedWorkerKey, setSelectedWorkerKey] = useState<string | null>(null);
 
   const animationRef = useRef<number | null>(null);
   const lastTickRef = useRef<number | null>(null);
@@ -238,6 +240,8 @@ export function LiveArenaCanvas() {
         setRound(payload.newRound);
         setWorkers([]);
         setFocusedWorkerKey(null);
+        setSelectedWorkerKey(null);
+        setHoveredWorker(null);
       },
     );
 
@@ -307,6 +311,9 @@ export function LiveArenaCanvas() {
     const viewportHeight =
       arenaContainerRef.current?.clientHeight ?? VIEWPORT_HEIGHT;
 
+    const visibleWorldWidth = viewportWidth / zoom;
+    const visibleWorldHeight = viewportHeight / zoom;
+
     const workerSize = getWorkerScreenSize(
       worker.bestShare,
       getMinBestShare(workers),
@@ -314,15 +321,15 @@ export function LiveArenaCanvas() {
     );
 
     const nextX = clamp(
-      worker.x - viewportWidth / 2 + workerSize / 2,
+      worker.x - visibleWorldWidth / 2 + workerSize / 2,
       0,
-      Math.max(0, WORLD_WIDTH - viewportWidth),
+      Math.max(0, WORLD_WIDTH - visibleWorldWidth),
     );
 
     const nextY = clamp(
-      worker.y - viewportHeight / 2 + workerSize / 2,
+      worker.y - visibleWorldHeight / 2 + workerSize / 2,
       0,
-      Math.max(0, WORLD_HEIGHT - viewportHeight),
+      Math.max(0, WORLD_HEIGHT - visibleWorldHeight),
     );
 
     setCamera({
@@ -347,22 +354,63 @@ export function LiveArenaCanvas() {
     }
   }, [searchQuery, searchResults.length]);
 
+  useEffect(() => {
+    if (!selectedWorkerKey) return;
+
+    const worker = workers.find((w) => w.uniqueKey === selectedWorkerKey);
+    if (!worker) {
+      setSelectedWorkerKey(null);
+      return;
+    }
+
+    const viewportWidth =
+      arenaContainerRef.current?.clientWidth ?? VIEWPORT_WIDTH;
+    const viewportHeight =
+      arenaContainerRef.current?.clientHeight ?? VIEWPORT_HEIGHT;
+
+    const visibleWorldWidth = viewportWidth / zoom;
+    const visibleWorldHeight = viewportHeight / zoom;
+
+    const workerSize = getWorkerScreenSize(
+      worker.bestShare,
+      getMinBestShare(workers),
+      getMaxBestShare(workers),
+    );
+
+    const nextX = clamp(
+      worker.x - visibleWorldWidth / 2 + workerSize / 2,
+      0,
+      Math.max(0, WORLD_WIDTH - visibleWorldWidth),
+    );
+
+    const nextY = clamp(
+      worker.y - visibleWorldHeight / 2 + workerSize / 2,
+      0,
+      Math.max(0, WORLD_HEIGHT - visibleWorldHeight),
+    );
+
+    setCamera({ x: nextX, y: nextY });
+    setHoveredWorker(worker);
+  }, [workers, selectedWorkerKey, zoom]);
+
   return (
-    <section className="space-y-6">
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="space-y-4 sm:space-y-6">
+      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-3 sm:p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-neutral-400">Bloc courant</p>
-            <p className="mt-1 text-2xl font-bold">{roundHexToDecimal(round)}</p>
+            <p className="text-xs text-neutral-400 sm:text-sm">Bloc courant</p>
+            <p className="mt-1 text-xl font-bold sm:text-2xl">
+              {roundHexToDecimal(round)}
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-xl bg-neutral-950 px-3 py-2 text-sm text-neutral-300">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="rounded-xl bg-neutral-950 px-3 py-2 text-xs text-neutral-300 sm:text-sm">
               Map 2600 × 1800
             </div>
 
             <div
-              className={`rounded-full px-3 py-1 text-sm font-medium ${
+              className={`rounded-full px-3 py-1 text-xs font-medium sm:text-sm ${
                 connected
                   ? "bg-green-500/15 text-green-400"
                   : "bg-red-500/15 text-red-400"
@@ -373,75 +421,81 @@ export function LiveArenaCanvas() {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setFocusedWorkerKey(null);
+              setSelectedWorkerKey(null);
             }}
             placeholder="Chercher une adresse ou un worker..."
-            className="min-w-[280px] flex-1 rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white outline-none placeholder:text-neutral-500 focus:border-neutral-500"
+            className="w-full min-w-0 flex-1 rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white outline-none placeholder:text-neutral-500 focus:border-neutral-500"
           />
 
-          <button
-            type="button"
-            onClick={() => {
-              if (searchResults.length > 0) {
-                centerCameraOnWorker(searchResults[0]);
-              }
-            }}
-            disabled={searchResults.length === 0}
-            className="rounded-xl bg-neutral-950 px-3 py-2 text-sm text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Centrer
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (searchResults.length > 0) {
+                  centerCameraOnWorker(searchResults[0]);
+                }
+              }}
+              disabled={searchResults.length === 0}
+              className="rounded-xl bg-neutral-950 px-3 py-2 text-sm text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Centrer
+            </button>
 
-          {searchQuery.trim() ? (
-            <div className="rounded-xl bg-neutral-950 px-3 py-2 text-sm text-neutral-300">
-              {searchResults.length} résultat{searchResults.length > 1 ? "s" : ""}
-            </div>
-          ) : null}
+            {searchQuery.trim() ? (
+              <div className="rounded-xl bg-neutral-950 px-3 py-2 text-xs text-neutral-300 sm:text-sm">
+                {searchResults.length} résultat{searchResults.length > 1 ? "s" : ""}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {searchQuery.trim() && searchResults.length > 0 ? (
-          <div className="mt-3 flex max-h-32 flex-wrap gap-2 overflow-y-auto">
+          <div className="mt-3 flex max-h-40 flex-col gap-2 overflow-y-auto sm:max-h-32 sm:flex-row sm:flex-wrap">
             {searchResults.slice(0, 8).map((worker) => (
               <button
                 key={worker.uniqueKey}
                 type="button"
-                onClick={() => centerCameraOnWorker(worker)}
-                className={`rounded-lg px-3 py-2 text-left text-xs transition ${
+                onClick={() => {
+                  centerCameraOnWorker(worker);
+                  setSelectedWorkerKey(worker.uniqueKey);
+                }}
+                className={`w-full rounded-lg px-3 py-2 text-left text-xs transition sm:w-auto ${
                   focusedWorker?.uniqueKey === worker.uniqueKey
                     ? "bg-yellow-500/20 text-yellow-300"
                     : "bg-neutral-950 text-neutral-300 hover:bg-neutral-800"
                 }`}
               >
                 <div className="font-medium">{worker.displayName}</div>
-                <div className="text-neutral-400">{worker.address}</div>
+                <div className="truncate text-neutral-400">{worker.address}</div>
               </button>
             ))}
           </div>
         ) : null}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[1fr_320px]">
         <div
           ref={arenaContainerRef}
-          className={`rounded-2xl border border-neutral-800 bg-neutral-900 p-4 ${
-            isFullscreen ? "h-screen w-screen rounded-none border-0" : ""
+          className={`rounded-2xl border border-neutral-800 bg-neutral-900 p-3 sm:p-4 ${
+            isFullscreen ? "h-screen w-screen rounded-none border-0 p-0" : ""
           }`}
         >
-          <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-bold">Ville des workers</h2>
-              <p className="text-sm text-neutral-400">
+              <h2 className="text-lg font-bold sm:text-xl">Ville des workers</h2>
+              <p className="text-xs text-neutral-400 sm:text-sm">
                 Clique-glisse pour déplacer la caméra dans la map
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={toggleFullscreen}
@@ -450,7 +504,7 @@ export function LiveArenaCanvas() {
                 {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
               </button>
 
-              <div className="rounded-xl bg-neutral-950 px-3 py-2 text-sm text-neutral-300">
+              <div className="rounded-xl bg-neutral-950 px-3 py-2 text-xs text-neutral-300 sm:text-sm">
                 {workerCountLabel}
               </div>
             </div>
@@ -465,6 +519,18 @@ export function LiveArenaCanvas() {
             spriteSheets={spriteSheets}
             isFullscreen={isFullscreen}
             focusedWorkerKey={focusedWorker?.uniqueKey ?? null}
+            selectedWorkerKey={selectedWorkerKey}
+            onSelectWorker={(worker) => {
+              setSelectedWorkerKey(worker.uniqueKey);
+              setFocusedWorkerKey(worker.uniqueKey);
+              setHoveredWorker(worker);
+            }}
+            onClearSelection={() => {
+              setSelectedWorkerKey(null);
+              setHoveredWorker(null);
+            }}
+            zoom={zoom}
+            setZoom={setZoom}
           />
         </div>
 

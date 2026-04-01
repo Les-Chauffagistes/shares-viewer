@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { LiveArenaCanvas } from "@/components/live-arena/LiveArenaCanvas";
 import { TopNav } from "@/components/top-nav";
 
@@ -7,24 +6,26 @@ export default function HomePage() {
     <main className="min-h-screen bg-neutral-950 text-white">
       <TopNav />
 
-      <div className="mx-auto max-w-7xl space-y-10 p-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-4 sm:space-y-8 sm:px-6 sm:py-6 lg:space-y-10 lg:px-8">
         <header className="space-y-3">
           <div className="flex items-center gap-4">
-            <h1 className="text-4xl font-bold">Bitcoin Workers Life</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl lg:text-4xl">
+              Bitcoin Workers Life
+            </h1>
           </div>
 
-          <p className="text-neutral-400">
+          <p className="text-sm text-neutral-400 sm:text-base">
             Visualisation en direct des mineurs de la pool chauffagistes-pool.fr
           </p>
         </header>
 
         <LiveArenaCanvas />
 
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5 lg:p-6">
           <div className="max-w-4xl space-y-4">
-            <h2 className="text-2xl font-bold">Comment jouer ?</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">Comment jouer ?</h2>
 
-            <p className="leading-7 text-neutral-300">
+            <p className="text-sm leading-7 text-neutral-300 sm:text-base">
               Connectez-vous sur la pool des Chauffagistes via{" "}
               <a
                 href="https://chauffagistes-btc.fr/pool"
@@ -40,11 +41,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5 lg:p-6">
           <div className="max-w-4xl space-y-4">
-            <h2 className="text-2xl font-bold">Concept</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">Concept</h2>
 
-            <p className="leading-7 text-neutral-300">
+            <p className="text-sm leading-7 text-neutral-300 sm:text-base">
               Bitcoin Workers Life est une visualisation en temps réel des mineurs
               actifs sur la pool{" "}
               <a
@@ -59,21 +60,21 @@ export default function HomePage() {
               des données directement issues des shares envoyées au backend.
             </p>
 
-            <p className="leading-7 text-neutral-300">
+            <p className="text-sm leading-7 text-neutral-300 sm:text-base">
               L’arène permet de transformer les statistiques de minage en une
               représentation visuelle vivante : taille, vitesse et présence des
               personnages évoluent en fonction des performances, notamment la
               best share du round en cours.
             </p>
 
-            <p className="leading-7 text-neutral-300">
+            <p className="text-sm leading-7 text-neutral-300 sm:text-base">
               Le projet est actuellement en version{" "}
               <span className="font-medium text-yellow-400">pré-alpha</span>.
               Certaines données, comme les niveaux ou la progression des workers,
               peuvent être réinitialisées à tout moment.
             </p>
 
-            <p className="leading-7 text-neutral-300">
+            <p className="text-sm leading-7 text-neutral-300 sm:text-base">
               Code source :{" "}
               <a
                 href="https://github.com/Les-Chauffagistes/shares-viewer"
@@ -97,11 +98,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5 lg:p-6">
           <div className="max-w-4xl space-y-4">
-            <h2 className="text-2xl font-bold">Crédits des sprites</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">Crédits des sprites</h2>
 
-            <p className="leading-7 text-neutral-300">
+            <p className="text-sm leading-7 text-neutral-300 sm:text-base">
               Les sprites utilisés dans cette interface proviennent du projet{" "}
               <a
                 href="https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator"
@@ -114,7 +115,7 @@ export default function HomePage() {
               .
             </p>
 
-            <p className="leading-7 text-neutral-300">
+            <p className="text-sm leading-7 text-neutral-300 sm:text-base">
               Les crédits détaillés des auteurs et des licences sont disponibles
               dans le fichier{" "}
               <a
