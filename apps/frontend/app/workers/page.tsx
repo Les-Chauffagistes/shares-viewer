@@ -1,5 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { WorkerLeaderboardTable, type WorkerProfile } from "@/components/WorkerLeaderboardTable";
+import { TopNav } from "@/components/top-nav";
+import { formatHash } from "@/components/utils/format";
 
 async function getWorkers(): Promise<WorkerProfile[]> {
   noStore();
@@ -45,25 +47,6 @@ export default async function WorkersPage() {
 
   const workers = await getWorkers();
 
-  if (workers.length === 0) {
-    return (
-      <main className="min-h-screen bg-neutral-950 text-white">
-        <div className="mx-auto max-w-7xl space-y-8 p-8">
-          <header className="space-y-2">
-            <h1 className="text-4xl font-bold">Leaderboard global</h1>
-            <p className="text-neutral-400">
-              Classement global des workers de la pool.
-            </p>
-          </header>
-
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-neutral-400">
-            Aucun worker trouvé pour le moment.
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   const totalWorkers = workers.length;
   const totalShares = workers.reduce((sum, worker) => sum + worker.totalShares, 0);
   const totalRounds = workers.reduce(
@@ -77,7 +60,9 @@ export default async function WorkersPage() {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
-      <div className="mx-auto max-w-7xl space-y-8 p-8">
+      <TopNav />
+
+      <div className="mx-auto max-w-7xl space-y-10 p-8">
         <header className="space-y-2">
           <h1 className="text-4xl font-bold">Leaderboard global</h1>
           <p className="text-neutral-400">
@@ -86,30 +71,34 @@ export default async function WorkersPage() {
           </p>
         </header>
 
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-            <div className="rounded-xl bg-neutral-950 px-3 py-2">
-              <p className="text-neutral-400">Workers</p>
-              <p className="font-semibold">{totalWorkers}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950 px-3 py-2">
-              <p className="text-neutral-400">Shares totales</p>
-              <p className="font-semibold">{totalShares.toLocaleString("fr-FR")}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950 px-3 py-2">
-              <p className="text-neutral-400">Rounds cumulés</p>
-              <p className="font-semibold">{totalRounds.toLocaleString("fr-FR")}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950 px-3 py-2">
-              <p className="text-neutral-400">Best share ever</p>
-              <p className="font-semibold">
-                {Math.round(bestShareEver).toLocaleString("fr-FR")}
-              </p>
-            </div>
+        {workers.length === 0 ? (
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-neutral-400">
+            Aucun worker trouvé pour le moment.
           </div>
+        ) : (
+          <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+            <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+              <div className="rounded-xl bg-neutral-950 px-3 py-2">
+                <p className="text-neutral-400">Workers</p>
+                <p className="font-semibold">{totalWorkers}</p>
+              </div>
+              <div className="rounded-xl bg-neutral-950 px-3 py-2">
+                <p className="text-neutral-400">Shares totales</p>
+                <p className="font-semibold">{totalShares.toLocaleString("fr-FR")}</p>
+              </div>
+              <div className="rounded-xl bg-neutral-950 px-3 py-2">
+                <p className="text-neutral-400">Rounds cumulés</p>
+                <p className="font-semibold">{totalRounds.toLocaleString("fr-FR")}</p>
+              </div>
+              <div className="rounded-xl bg-neutral-950 px-3 py-2">
+                <p className="text-neutral-400">Best share ever</p>
+                <p className="font-semibold">{formatHash(bestShareEver)}</p>
+              </div>
+            </div>
 
-          <WorkerLeaderboardTable workers={workers} />
-        </section>
+            <WorkerLeaderboardTable workers={workers} />
+          </section>
+        )}
       </div>
     </main>
   );
