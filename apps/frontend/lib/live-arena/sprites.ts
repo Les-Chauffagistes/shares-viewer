@@ -31,7 +31,7 @@ export const LEVEL_TITLES = [
  * - walker_002.png => 2
  * - walker_005.png => 5
  */
-export const AVAILABLE_WALKER_FILES = [1, 2, 3, 4, 5] as const;
+export const AVAILABLE_WALKER_FILES = [1, 2, 3, 4, 5, 6, 7] as const;
 
 export function getWalkerSource(index: number) {
   const safeIndex = Math.max(0, index);
