@@ -24,14 +24,10 @@ export const LEVEL_TITLES = [
   "Guerrier Légendaire",
 ] as const;
 
-/**
- * Mets ici UNIQUEMENT les sprites qui existent vraiment.
- * Exemple :
- * - walker_001.png => 1
- * - walker_002.png => 2
- * - walker_005.png => 5
- */
 export const AVAILABLE_WALKER_FILES = [1, 2, 3, 4, 5, 6, 7] as const;
+
+const UNIFORM_FRAME_SIZE = 64;
+const CONTENT_PADDING = 6;
 
 export function getWalkerSource(index: number) {
   const safeIndex = Math.max(0, index);
@@ -54,14 +50,6 @@ export function getWalkerTitleForLevel(level: number) {
   return LEVEL_TITLES[getWalkerIndexForLevel(level)];
 }
 
-/**
- * Retourne un index d'ARRAY chargé, pas un numéro de fichier.
- * Exemple :
- * AVAILABLE_WALKER_FILES = [1, 2, 5]
- * - si le level veut le skin #1 => index array 0
- * - si le level veut le skin #2 => index array 1
- * - si le level veut le skin #20 => on clamp sur le dernier => index array 2
- */
 export function getSafeWalkerIndexForLevel(
   level: number,
   loadedSpritesCount: number,
@@ -125,6 +113,128 @@ export function removeUniformBackground(
   return offscreen;
 }
 
+type AlphaBounds = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  width: number;
+  height: number;
+};
+
+function getOpaqueBounds(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  alphaThreshold = 8,
+): AlphaBounds | null {
+  const imageData = ctx.getImageData(x, y, width, height);
+  const data = imageData.data;
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let py = 0; py < height; py++) {
+    for (let px = 0; px < width; px++) {
+      const index = (py * width + px) * 4;
+      const alpha = data[index + 3];
+
+      if (alpha > alphaThreshold) {
+        if (px < minX) minX = px;
+        if (py < minY) minY = py;
+        if (px > maxX) maxX = px;
+        if (py > maxY) maxY = py;
+      }
+    }
+  }
+
+  if (maxX === -1 || maxY === -1) {
+    return null;
+  }
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1,
+  };
+}
+
+/**
+ * Transforme une spritesheet 9x4 quelconque en spritesheet 9x4 uniforme.
+ * Chaque frame finale fait 64x64 et le contenu du perso est auto-recadré,
+ * redimensionné et centré pour garder une taille visuelle cohérente.
+ */
+export function normalizeSpriteSheetTo64(
+  source: HTMLCanvasElement,
+  sourceFrameWidth: number,
+  sourceFrameHeight: number,
+): HTMLCanvasElement {
+  const normalized = document.createElement("canvas");
+  normalized.width = FRAME_COLUMNS * UNIFORM_FRAME_SIZE;
+  normalized.height = FRAME_ROWS * UNIFORM_FRAME_SIZE;
+
+  const destCtx = normalized.getContext("2d");
+  const srcCtx = source.getContext("2d");
+
+  if (!destCtx || !srcCtx) return normalized;
+
+  destCtx.imageSmoothingEnabled = false;
+
+  for (let row = 0; row < FRAME_ROWS; row++) {
+    for (let col = 0; col < FRAME_COLUMNS; col++) {
+      const sx = col * sourceFrameWidth;
+      const sy = row * sourceFrameHeight;
+      const dx = col * UNIFORM_FRAME_SIZE;
+      const dy = row * UNIFORM_FRAME_SIZE;
+
+      const bounds = getOpaqueBounds(
+        srcCtx,
+        sx,
+        sy,
+        sourceFrameWidth,
+        sourceFrameHeight,
+      );
+
+      if (!bounds) {
+        continue;
+      }
+
+      const availableSize = UNIFORM_FRAME_SIZE - CONTENT_PADDING * 2;
+      const scale = Math.min(
+        availableSize / bounds.width,
+        availableSize / bounds.height,
+      );
+
+      const drawWidth = Math.max(1, Math.round(bounds.width * scale));
+      const drawHeight = Math.max(1, Math.round(bounds.height * scale));
+
+      const offsetX = Math.floor((UNIFORM_FRAME_SIZE - drawWidth) / 2);
+      const offsetY = Math.floor((UNIFORM_FRAME_SIZE - drawHeight) / 2);
+
+      destCtx.drawImage(
+        source,
+        sx + bounds.minX,
+        sy + bounds.minY,
+        bounds.width,
+        bounds.height,
+        dx + offsetX,
+        dy + offsetY,
+        drawWidth,
+        drawHeight,
+      );
+    }
+  }
+
+  return normalized;
+}
+
 export async function loadSpriteSheets(): Promise<LoadedSpriteSheet[]> {
   return Promise.all(
     AVAILABLE_WALKER_FILES.map((fileNumber) => {
@@ -135,11 +245,33 @@ export async function loadSpriteSheets(): Promise<LoadedSpriteSheet[]> {
         img.src = src;
 
         img.onload = () => {
+          if (
+            img.width % FRAME_COLUMNS !== 0 ||
+            img.height % FRAME_ROWS !== 0
+          ) {
+            reject(
+              new Error(
+                `Spritesheet invalide pour ${src} : dimensions ${img.width}x${img.height} non divisibles par ${FRAME_COLUMNS}x${FRAME_ROWS}`,
+              ),
+            );
+            return;
+          }
+
+          const cleaned = removeUniformBackground(img);
+          const sourceFrameWidth = img.width / FRAME_COLUMNS;
+          const sourceFrameHeight = img.height / FRAME_ROWS;
+
+          const normalized = normalizeSpriteSheetTo64(
+            cleaned,
+            sourceFrameWidth,
+            sourceFrameHeight,
+          );
+
           resolve({
             source: src,
-            image: removeUniformBackground(img),
-            frameWidth: img.width / FRAME_COLUMNS,
-            frameHeight: img.height / FRAME_ROWS,
+            image: normalized,
+            frameWidth: UNIFORM_FRAME_SIZE,
+            frameHeight: UNIFORM_FRAME_SIZE,
           });
         };
 
