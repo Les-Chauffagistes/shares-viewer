@@ -24,7 +24,7 @@ export const LEVEL_TITLES = [
   "Guerrier Légendaire",
 ] as const;
 
-export const AVAILABLE_WALKER_FILES = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export const AVAILABLE_WALKER_FILES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 const UNIFORM_FRAME_SIZE = 64;
 const CONTENT_PADDING = 6;
